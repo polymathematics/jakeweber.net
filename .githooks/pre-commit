@@ -1,0 +1,13 @@
+#!/bin/sh
+# Regenerates manifest.js before every commit so it can never fall out of sync
+# with what is actually in images/gallery/ and books/.
+#
+# Active because the repo sets core.hooksPath to .githooks. If you ever re-clone,
+# run this once to turn it back on:  git config core.hooksPath .githooks
+
+./make-manifest.sh >/dev/null || {
+  echo "pre-commit: make-manifest.sh failed, commit aborted" >&2
+  exit 1
+}
+
+git add manifest.js
