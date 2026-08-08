@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>jake weber's inventions</title>
+  <link href="style.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+<div class="container">
+ <div class="left">
+   <div class="header">
+     <h2><a id="main-nav-home" href="/index.html">jake weber</a></h2>
+   </div>
+   <div class="nav-container">
+     <div class="nav-item" id="nav-item-one" onclick="window.location.href='https://jakeweber.net/writing.html';"><h2><a href="/writing.html">writing</a></h2></div>
+     <div class="nav-item" id="nav-item-three" onclick="window.location.href='https://jakeweber.net/music.html';"><h2><a href="/music.html">music</a></h2></div>
+     <div class="nav-item-active" id="nav-item-two" onclick="window.location.href='https://jakeweber.net/invention.html';"><h2><a href="/invention.html">invention</a></h2></div>
+     <div class="nav-item" id="nav-item-four"><h2><a href="https://getprinternet.com" target="_blank">printernet</a></h2></div>
+     <div class="nav-item" id="nav-item-five" onclick="window.location.href='https://jakeweber.net/garden.html';"><h2><a href="/garden.html">garden</a></h2></div>
+     <div class="subscribe-form" id="subscribe-form">
+       <h3>subscribe for updates</h3>
+       <form id="form" action="https://api.web3forms.com/submit" method="POST">
+        <input type="hidden" name="access_key" value="1d86b163-49ea-40d3-aed5-cc05884a72f1">
+        <input type="text" name="email" placeholder="your email" required>
+        <input type="hidden" name="redirect" value="https://web3forms.com/success"><br><br>
+        <button type="submit">Subscribe</button>
+      </form>
+     </div>
+     <div class="bottom-links">
+     <img src="/images/twitter.png" alt="twitter logo" id="twitter-logo">
+     <img src="images/email.png" alt="email logo" id="email-logo">
+     <img src="images/printer.png" alt="printer logo" id="printer-logo">
+     </div>
+   </div>
+ </div>
+<div class="right">
+  <div class="header-mobile">
+     <h2 style="color: black;">jake weber</h2>
+   </div>
+  <div class="home-container" id="home-container">
+  <div class="about-box" id="about-box">
+    <h2>about</h2>
+    <p>inventions are things I've made that aren't music or writing. These are mostly software projects with some hardware stuff too. I am still building this out, so some things may not be linked.</p>
+  </div>
+    <div class="project-info" id="project-info">
+      <h1 id="project-name"></h1>
+      <h2 id="project-description" style="font-family: Arial;"></h2>
+      <img id="project-image">
+      <h3 id="project-link-label" style="color: white;">project link:</h3>
+      <a id="project-link" href=""></a>
+      <br><br>
+      <button class="close-button" id="close-button" onclick="closeProject()">close</button>
+      </div>
+  <div class="inventions-box" id="reading-rec-box">
+    <h2>inventions</h2>
+    <div class="project-link" id="one"><p><a class="work-links" >ChromeGPT</a></p></div>
+    <div class="project-link" id="two"><p><a class="work-links">MotMot</a></p></div>
+    <div class="project-link" id="sixteen"><p><a class="work-links">MusicTalk</a></div>
+    <div class="project-link" id="three"><p><a class="work-links" >Printernet</a></p></div>
+    <div class="project-link" id="four"><p><a class="work-links" >Pi Test</a></p></div>
+    <div class="project-link" id="five"><p><a class="work-links">Pocket Prompt</a></p></div>
+    <div class="project-link" id="six"><p>Reco</p></div>
+    <div class="project-link" id="seven"><p><a class="work-links">Reading This</a></p></div>
+    <div class="project-link" id="nine"><p>Secret Mask Project</p></div>
+    <div class="project-link" id="ten"><p>iPodify</p></div>
+    <div class="project-link" id="eleven"><p><a class="work-links" href="https://thehovertone.polymathematics.repl.co/" target="_blank">The Hovertone</a></p></div>
+    <div class="project-link" id="twelve"><p><a class="work-links" href="https://internetpayphone.polymathematics.repl.co/" target="_blank">The Internet Payphone</a></p></div>
+    <div class="project-link" id="thirteen"><p><a class="work-links" href="https://weatherstation.polymathematics.repl.co/" target="_blank">The Weather Station</a></p></div>
+    <div class="project-link" id="fourteen"><p><a class="work-links" href="https://joiner3.polymathematics.repl.co/" target="_blank">Joiner</a></p></div>
+  <div class="project-link" id="fifteen"><p><a class="work-links" href="https://github.com/polymathematics/retrofit" target="_blank">Retrofit</a></p></div>
+   </div>
+  <div class="popular-box" id="popular-box">
+  <h2>recent stuff</h2>
+  <marquee><div class="popular-stuff">
+   <p>cubicle</p>
+   <p>magic bookshelf</p>
+   <p>music talk</p>
+   <p>Pi Test</p>
+  </div> 
+  </marquee>
+  </div>
+  <div class="reco-box" id="reco-box">
+    <h2>latest invention - Cubicle</h2>
+    <p style="font-size: 13px;"><a href="https://www.getcubicle.com/" target="_blank" style="color:blue; font-size: 16px; font-family:Arial">Cubicle</a> is a simple task management app I built for myself based on batching your to do list in 20 minute work sprints. I made it publicly available in early 2024 and we are up to 11 users!</p>
+  </div>
+  </div>
+</div>
+</div>
+  <script src="script.js"></script>
+
+ 
+</body>
+
+</html>
