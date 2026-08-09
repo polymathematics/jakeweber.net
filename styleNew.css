@@ -119,6 +119,44 @@ body {
   min-height: 0;
 }
 
+/* below the about block: work list on the left, photo of the day on the right */
+.left-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.left-main {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.photo-of-the-day {
+  margin: 0;
+  min-width: 0;
+}
+
+/* a fixed ratio keeps the panel from lurching as portrait and landscape
+   photos take their turn */
+.photo-of-the-day img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: 1px solid #111;
+  background: #e8e8e8;
+}
+
+.photo-of-the-day figcaption {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #555;
+  text-align: center;
+}
+
 .shortcuts-footer {
   flex-shrink: 0;
   font-size: 13px;
@@ -350,6 +388,11 @@ a:hover {
     gap: 28px;
   }
 
+  .left-columns {
+    grid-template-columns: 1fr;
+  }
+
+  /* the photo of the day is moved in here by photo-of-the-day.js */
   .right-column {
     grid-template-rows: auto auto;
   }

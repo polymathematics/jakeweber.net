@@ -12,7 +12,20 @@ A static site. No framework, no build tooling — plain HTML, CSS, and one scrip
 | `yearbook.html` | year-by-year photos, books, desks, work, and journal |
 
 `styleNew.css` styles the whole site. `yearbook.css` and `yearbook.js` are loaded
-only by the yearbook page.
+only by the yearbook page, `photo-of-the-day.js` only by the home page.
+
+## Photo of the day
+
+The home page shows one photo from `images/gallery/`, any year, with the year in
+its caption. Add a photo to the gallery and it joins the rotation — there's no
+separate list to keep up.
+
+The pick is seeded by the date, so it holds for the whole day and every visitor
+sees the same one. Nothing is stored in the browser. It rotates at the visitor's
+local midnight.
+
+Note that `script.js` is deliberately *not* loaded on the home page: it redirects
+mobile user agents to `mobile.html`, which doesn't exist here.
 
 ## Adding to the yearbook
 
