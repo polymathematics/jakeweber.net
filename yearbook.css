@@ -76,6 +76,31 @@
   height: auto;
 }
 
+.work-group + .work-group {
+  margin-top: 16px;
+}
+
+.work-group h3 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #555;
+}
+
+.work-entry {
+  margin: 0 0 6px;
+}
+
+.work-entry:last-child {
+  margin-bottom: 0;
+}
+
+.work-meta {
+  color: #555;
+}
+
 .photo-gallery {
   min-height: 0;
   overflow-y: auto;

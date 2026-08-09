@@ -60,6 +60,7 @@ link.classList.toggle("selected", link.textContent.trim() === String(year));
 if (yearChanged){
 if (deskSection.style.display !== "none") showDesk(currentYear);
 if (booksSection.style.display !== "none") showBooks(currentYear);
+if (workSection.style.display !== "none") showWork(currentYear);
 }
 
 const files = await listFiles(year);
@@ -92,6 +93,7 @@ const panelContent = document.querySelector(".panel-content");
 const contentSections = panelContent.querySelectorAll("div");
 const deskSection = panelContent.querySelector(".desk");
 const booksSection = panelContent.querySelector(".books");
+const workSection = panelContent.querySelector(".work");
 
 // the desk photo is always <year>_desk, but the extension varies by year
 const deskExtensions = ["jpeg", "jpg", "png", "JPG", "webp"];
@@ -154,6 +156,103 @@ img.src = "images/desks/" + year + "_desk." + deskExtensions[0];
 deskSection.replaceChildren(img);
 }
 
+// the order categories are listed in; anything else falls in after these
+const workCategories = ["writing", "invention", "music", "photo / video"];
+
+let workRequestId = 0;
+
+// one entry per line in work/<year>.md:  category, what happened, place, year
+// The year is optional and only shown when it is a range, like "2020 - 2024".
+// Split from the outside in, so commas inside the description survive.
+function workEntry(line){
+const text = bookTitle(line); // strips a leading bullet, same as the book list
+const firstComma = text.indexOf(",");
+if (firstComma === -1) return { category: "", description: text, place: "", span: "" };
+
+const category = text.slice(0, firstComma).trim().toLowerCase();
+let rest = text.slice(firstComma + 1);
+let span = "";
+let place = "";
+
+const year = rest.match(/,\s*(\d{4}(?:\s*[-–—]\s*\d{4})?)\s*$/);
+if (year){
+span = year[1].replace(/\s*[-–—]\s*/, " - ");
+rest = rest.slice(0, year.index);
+}
+
+const lastComma = rest.lastIndexOf(",");
+if (lastComma > 0){
+place = rest.slice(lastComma + 1).trim();
+rest = rest.slice(0, lastComma);
+}
+
+return { category: category, description: rest.trim(), place: place, span: span };
+}
+
+async function showWork(year){
+const id = ++workRequestId;
+let text = null;
+
+try {
+const response = await fetch("work/" + year + ".md");
+if (response.ok) text = await response.text();
+} catch (error) {
+// Opened straight from disk, where fetch cannot read local files.
+}
+if (id !== workRequestId) return; // a newer year was clicked while this was loading
+
+const lines = text
+? text.split("\n").filter(line => !line.trim().startsWith("#")).map(line => line.trim()).filter(Boolean)
+: ((window.WORK && window.WORK[year]) || []);
+
+const entries = lines.map(workEntry);
+
+if (entries.length === 0){
+const empty = document.createElement("p");
+empty.textContent = "no work logged for " + year;
+workSection.replaceChildren(empty);
+return;
+}
+
+const order = workCategories.slice();
+for (const entry of entries){
+if (!order.includes(entry.category)) order.push(entry.category);
+}
+
+const groups = [];
+for (const category of order){
+const inCategory = entries.filter(entry => entry.category === category);
+if (inCategory.length === 0) continue;
+
+const group = document.createElement("div");
+group.className = "work-group";
+
+const heading = document.createElement("h3");
+heading.textContent = category;
+group.appendChild(heading);
+
+for (const entry of inCategory){
+const p = document.createElement("p");
+p.className = "work-entry";
+p.textContent = entry.description;
+
+// a range is worth showing since the entry repeats across those years
+const meta = [entry.place, entry.span.includes("-") ? entry.span : ""].filter(Boolean).join(", ");
+if (meta){
+const span = document.createElement("span");
+span.className = "work-meta";
+span.textContent = " — " + meta;
+p.appendChild(span);
+}
+
+group.appendChild(p);
+}
+groups.push(group);
+}
+
+workSection.replaceChildren(...groups);
+}
+
 function showSection(name){
 for (const link of panelTabs.querySelectorAll("a")){
 link.classList.toggle("selected", link.textContent.trim() === name);
@@ -163,6 +262,7 @@ section.style.display = section.classList.contains(name) ? "" : "none";
 }
 if (name === "desk") showDesk(currentYear);
 if (name === "books") showBooks(currentYear);
+if (name === "work") showWork(currentYear);
 }
 
 panelTabs.addEventListener("click", function(event){
