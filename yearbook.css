@@ -101,6 +101,16 @@
   color: #555;
 }
 
+/* the "other" tab is prose, so it gets more room to breathe than the lists */
+.journal-entry {
+  margin: 0 0 12px;
+  line-height: 1.55;
+}
+
+.journal-entry:last-child {
+  margin-bottom: 0;
+}
+
 .photo-gallery {
   min-height: 0;
   overflow-y: auto;

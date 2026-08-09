@@ -1,10 +1,10 @@
 #!/bin/bash
-# Regenerates manifest.js from images/gallery/<year>/, books/<year>.md, and
-# work/<year>.md.
+# Regenerates manifest.js from images/gallery/<year>/ and the <year>.md files in
+# books/, work/, and journal/.
 # The manifest is what makes the page work when it is opened straight from disk,
 # where fetch() cannot read local files.
 # Run it after dropping new photos or editing a list:  ./make-manifest.sh
-# Or let it run itself on every change:  fswatch -o images/gallery books work | xargs -n1 -I{} ./make-manifest.sh
+# Or let it run itself on every change:  fswatch -o images/gallery books work journal | xargs -n1 -I{} ./make-manifest.sh
 
 cd "$(dirname "$0")" || exit 1
 
@@ -41,6 +41,7 @@ echo "};"
 
 md_years books BOOKS
 md_years work WORK
+md_years journal JOURNAL
 } > manifest.js
 
 echo "wrote manifest.js"

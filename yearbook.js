@@ -61,6 +61,7 @@ if (yearChanged){
 if (deskSection.style.display !== "none") showDesk(currentYear);
 if (booksSection.style.display !== "none") showBooks(currentYear);
 if (workSection.style.display !== "none") showWork(currentYear);
+if (otherSection.style.display !== "none") showJournal(currentYear);
 }
 
 const files = await listFiles(year);
@@ -94,40 +95,47 @@ const contentSections = panelContent.querySelectorAll("div");
 const deskSection = panelContent.querySelector(".desk");
 const booksSection = panelContent.querySelector(".books");
 const workSection = panelContent.querySelector(".work");
+const otherSection = panelContent.querySelector(".other");
 
 // the desk photo is always <year>_desk, but the extension varies by year
 const deskExtensions = ["jpeg", "jpg", "png", "JPG", "webp"];
 
 let booksRequestId = 0;
 
-// one book per line in books/<year>.md - tolerate "- ", "* " and "1. " bullets
+// one entry per line - tolerate "- ", "* " and "1. " bullets
 function bookTitle(line){
 return line.replace(/^\s*(?:[-*+]|\d+\.)\s+/, "").trim();
 }
 
-async function showBooks(year){
-const id = ++booksRequestId;
+// Every list tab reads <folder>/<year>.md the same way: live over HTTP, and
+// from the manifest.js copy when the page is opened straight off disk, where
+// fetch cannot read local files.
+async function loadYearLines(folder, year, fallback){
 let text = null;
 
 try {
-const response = await fetch("books/" + year + ".md");
+const response = await fetch(folder + "/" + year + ".md");
 if (response.ok) text = await response.text();
 } catch (error) {
-// Opened straight from disk, where fetch cannot read local files.
+// Opened straight from disk. Fall back to manifest.js, like the gallery does.
 }
+if (text === null) return (fallback && fallback[year]) || [];
+
+return text.split("\n").filter(line => !line.trim().startsWith("#")).map(bookTitle).filter(Boolean);
+}
+
+function emptyNote(section, message){
+const empty = document.createElement("p");
+empty.textContent = message;
+section.replaceChildren(empty);
+}
+
+async function showBooks(year){
+const id = ++booksRequestId;
+const titles = await loadYearLines("books", year, window.BOOKS);
 if (id !== booksRequestId) return; // a newer year was clicked while this was loading
 
-// fall back to manifest.js, the same way the gallery does
-const titles = text
-? text.split("\n").filter(line => !line.trim().startsWith("#")).map(bookTitle).filter(Boolean)
-: ((window.BOOKS && window.BOOKS[year]) || []);
-
-if (titles.length === 0){
-const empty = document.createElement("p");
-empty.textContent = "no books for " + year;
-booksSection.replaceChildren(empty);
-return;
-}
+if (titles.length === 0) return emptyNote(booksSection, "no books for " + year);
 
 booksSection.replaceChildren(...titles.map(function(title){
 const p = document.createElement("p");
@@ -191,28 +199,12 @@ return { category: category, description: rest.trim(), place: place, span: span 
 
 async function showWork(year){
 const id = ++workRequestId;
-let text = null;
-
-try {
-const response = await fetch("work/" + year + ".md");
-if (response.ok) text = await response.text();
-} catch (error) {
-// Opened straight from disk, where fetch cannot read local files.
-}
+const lines = await loadYearLines("work", year, window.WORK);
 if (id !== workRequestId) return; // a newer year was clicked while this was loading
-
-const lines = text
-? text.split("\n").filter(line => !line.trim().startsWith("#")).map(line => line.trim()).filter(Boolean)
-: ((window.WORK && window.WORK[year]) || []);
 
 const entries = lines.map(workEntry);
 
-if (entries.length === 0){
-const empty = document.createElement("p");
-empty.textContent = "no work logged for " + year;
-workSection.replaceChildren(empty);
-return;
-}
+if (entries.length === 0) return emptyNote(workSection, "no work logged for " + year);
 
 const order = workCategories.slice();
 for (const entry of entries){
@@ -253,6 +245,24 @@ groups.push(group);
 workSection.replaceChildren(...groups);
 }
 
+let journalRequestId = 0;
+
+// the "other" tab is the journal: one paragraph per line in journal/<year>.md
+async function showJournal(year){
+const id = ++journalRequestId;
+const entries = await loadYearLines("journal", year, window.JOURNAL);
+if (id !== journalRequestId) return; // a newer year was clicked while this was loading
+
+if (entries.length === 0) return emptyNote(otherSection, "nothing else for " + year);
+
+otherSection.replaceChildren(...entries.map(function(entry){
+const p = document.createElement("p");
+p.className = "journal-entry";
+p.textContent = entry;
+return p;
+}));
+}
+
 function showSection(name){
 for (const link of panelTabs.querySelectorAll("a")){
 link.classList.toggle("selected", link.textContent.trim() === name);
@@ -263,6 +273,7 @@ section.style.display = section.classList.contains(name) ? "" : "none";
 if (name === "desk") showDesk(currentYear);
 if (name === "books") showBooks(currentYear);
 if (name === "work") showWork(currentYear);
+if (name === "other") showJournal(currentYear);
 }
 
 panelTabs.addEventListener("click", function(event){
