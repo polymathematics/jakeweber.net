@@ -32,9 +32,9 @@ and `-` / `*` / `1.` bullets are all fine; they get stripped.
     invention, launch Cubicle, Austin, 2024
 
 Same blank-line / `#` / bullet handling as the book lists. The tab groups
-entries under their category, in this order: writing, invention, music,
-`photo / video`. A category that isn't one of those still works — it just
-lands after the ones that are.
+entries under their category, in this order: writing, invention, music, media.
+A category that isn't one of those still works — it just lands after the ones
+that are.
 
 Only the first and last two commas are structural, so a description can
 contain commas of its own (`~15,000 words written for Bad Rabbit, Austin, 2023`

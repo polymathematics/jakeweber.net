@@ -157,7 +157,7 @@ deskSection.replaceChildren(img);
 }
 
 // the order categories are listed in; anything else falls in after these
-const workCategories = ["writing", "invention", "music", "photo / video"];
+const workCategories = ["writing", "invention", "music", "media"];
 
 let workRequestId = 0;
 
