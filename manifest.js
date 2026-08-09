@@ -11,6 +11,13 @@ window.GALLERY = {
 "2026": ["2e7c8209-ed92-4bff-9717-d91beb333314_8064x6048.jpg","Screenshot 2026-08-09 at 3.49.09 PM.png","afb41e2e-12a7-479a-b410-1fdb8e796ee3_5712x4284.jpg","alley.jpeg","bikes.jpeg","coffee.jpeg","lunch.jpeg","mirrorSelfie29.jpeg","parisSelfie.jpeg","readingboat.png","road.jpeg","selfie.jpeg","skycar.JPG","trail.jpeg","walk.JPG"],
 };
 window.BOOKS = {
+"2018": ["before I kept a proper reading log... need to dig it up"],
+"2019": ["before I kept a proper reading log... need to dig it up"],
+"2020": ["before I kept a proper reading log... need to dig it up"],
+"2021": ["before I kept a proper reading log... need to dig it up"],
+"2022": ["before I kept a proper reading log... need to dig it up"],
+"2023": ["before I kept a proper reading log... need to dig it up"],
+"2024": [],
 "2025": ["How to Write One Song, Jeff Tweedy (reread)","What the Dormouse Said: How the Sixties Counterculture Shaped the Personal Computer Industry, John Markoff","The Control of Nature, John McPhee","Stranger in a Strange Land, Robert Heinlein","Remembrance: Correspondence from Ray Bradbury","Handbook of Short Story Writing, Collections of Essays in Writer’s Digest","Portrait of Dorian Gray, Oscar Wilde","The Great Gatsby, F. Scott Fitzgerald (reread)","The Writing Life, Annie Dilliard"],
 "2026": ["the ministry of time","dandelion wine","invisible cities","klara and the sun","lincoln in the bardo","normal people","sea of tranquility","phoebe berman's gonna lose it","stoner","monstrillio"],
 };
