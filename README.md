@@ -1,6 +1,6 @@
 # jakeweber.net
 
-A static site. No framework, no build tooling — plain HTML, CSS, and one script.
+Jake Weber's personal website. 2026 version. A simplified and trimmed back version of the 2024-2025 version. 
 
 ## Pages
 
