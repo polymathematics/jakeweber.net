@@ -70,6 +70,12 @@ of what's in `images/gallery/`, `books/`, `work/`, and `journal/`. It's generate
 `make-manifest.sh`, which runs automatically on every commit via the pre-commit
 hook in `.githooks/`.
 
+It also records each photo's pixel dimensions, read with `sips`. The gallery uses
+those to reserve every tile at the right shape before the photo arrives, so the
+columns don't jump around while a year loads. If that block ever comes up empty —
+`sips` is macOS-only — the tiles fall back to a guessed shape and the grid still
+works, it just shifts a little as photos land.
+
 You should never edit `manifest.js` by hand. If it ever looks stale, run:
 
     ./make-manifest.sh

@@ -35,21 +35,63 @@ if (imagePattern.test(name) && !name.includes("/")) files.push(name);
 return files;
 }
 
-async function listFiles(year){
-try {
-const files = await listFromServer(year);
-if (files) return files;
-} catch (error) {
-// Opened straight from disk, or a host that does not list directories.
+// how many photos load right away - the rest wait until they are scrolled to,
+// so the ones actually on screen are not queued behind a dozen others
+const eagerPhotos = 6;
+
+// A tile is the shimmering placeholder and the photo that lands on top of it.
+// Reserving the photo's real shape up front is what keeps the columns still
+// while a year fills in.
+function photoTile(year, file, position){
+const tile = document.createElement("figure");
+tile.className = "tile loading";
+// colour and pulse rate come off two different cycles in the stylesheet, keyed
+// on the tile's position, so no two neighbours shimmer alike
+
+const size = window.PHOTO_SIZES && window.PHOTO_SIZES[year + "/" + file];
+if (size) tile.style.aspectRatio = size[0] + " / " + size[1];
+
+const img = document.createElement("img");
+img.alt = year + " " + file.replace(/\.[^.]+$/, "");
+img.decoding = "async";
+img.loading = position < eagerPhotos ? "eager" : "lazy";
+
+function settle(){
+tile.classList.remove("loading");
+// hand the height back to the photo itself, in case the manifest had no
+// size for it and the tile has been holding a guessed shape
+tile.style.aspectRatio = "";
 }
-return (window.GALLERY && window.GALLERY[year]) || [];
+img.addEventListener("load", settle);
+img.addEventListener("error", function(){
+settle();
+tile.remove();
+});
+
+img.src = "images/gallery/" + year + "/" + file;
+// already in cache: skip the shimmer rather than flash it for one frame
+if (img.complete && img.naturalWidth) settle();
+
+tile.appendChild(img);
+return tile;
+}
+
+function renderPhotos(year, files){
+if (files.length === 0){
+const empty = document.createElement("p");
+empty.textContent = "no photos for " + year;
+galleryColumns.replaceChildren(empty);
+return;
+}
+galleryColumns.replaceChildren(...files.map(function(file, position){
+return photoTile(year, file, position);
+}));
 }
 
 async function showYear(year){
 const id = ++requestId;
 const yearChanged = currentYear !== String(year);
 currentYear = String(year);
-galleryColumns.innerHTML = "";
 resetGalleryScroll();
 
 for (const link of menu.querySelectorAll("a")){
@@ -64,22 +106,22 @@ if (workSection.style.display !== "none") showWork(currentYear);
 if (otherSection.style.display !== "none") showJournal(currentYear);
 }
 
-const files = await listFiles(year);
+// Tile straight from the manifest, which is already in memory, so the grid is
+// on screen the moment the year is clicked. Asking the server first would put
+// a round trip in front of that - and everywhere but local dev it is a 404.
+const known = (window.GALLERY && window.GALLERY[year]) || [];
+renderPhotos(year, known);
+
+let listed = null;
+try {
+listed = await listFromServer(year);
+} catch (error) {
+// Opened straight from disk, or a host that does not list directories.
+}
 if (id !== requestId) return; // a newer year was clicked while this was loading
 
-if (files.length === 0){
-const empty = document.createElement("p");
-empty.textContent = "no photos for " + year;
-galleryColumns.appendChild(empty);
-return;
-}
-
-for (const file of files){
-const img = document.createElement("img");
-img.src = "images/gallery/" + year + "/" + file;
-img.alt = year + " " + file.replace(/\.[^.]+$/, "");
-galleryColumns.appendChild(img);
-}
+// only redraw if the folder really does hold something else
+if (listed && listed.sort().join("\n") !== known.join("\n")) renderPhotos(year, listed);
 }
 
 menu.addEventListener("click", function(event){

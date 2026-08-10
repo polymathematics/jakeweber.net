@@ -42,6 +42,19 @@ echo "};"
 md_years books BOOKS
 md_years work WORK
 md_years journal JOURNAL
+
+# Pixel dimensions, keyed "<year>/<file>". The gallery reserves each tile at the
+# right shape before the photo arrives, so the grid never reflows mid-load.
+# sips reads all of them in well under a second.
+echo "window.PHOTO_SIZES = {"
+find images/gallery -type f \
+\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.gif' -o -iname '*.webp' \) \
+-print0 | xargs -0 sips -g pixelWidth -g pixelHeight 2>/dev/null \
+| awk -v root="$PWD/images/gallery/" '
+index($0, root) == 1 { key = substr($0, length(root) + 1); next }
+/pixelWidth:/  { w = $2 }
+/pixelHeight:/ { h = $2; gsub(/\\/, "\\\\", key); gsub(/"/, "\\\"", key); print "\"" key "\": [" w "," h "]," }'
+echo "};"
 } > manifest.js
 
 echo "wrote manifest.js"

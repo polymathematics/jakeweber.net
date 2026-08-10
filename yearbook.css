@@ -122,16 +122,100 @@
   column-gap: 10px;
 }
 
-.gallery-columns img {
-  display: block;
-  width: 100%;
-  height: auto;
-  margin-bottom: 10px;
+.gallery-columns p {
+  margin: 0;
+}
+
+/* Each photo sits in a tile that holds its exact shape from the start, taken
+   from PHOTO_SIZES in the manifest, so nothing shifts as the year fills in. */
+.tile {
+  position: relative;
+  margin: 0 0 10px;
   break-inside: avoid;
 }
 
-.gallery-columns p {
-  margin: 0;
+.tile.loading {
+  overflow: hidden;
+  aspect-ratio: 3 / 4; /* only reached if the manifest has no size on file */
+  background-size: 300% 300%;
+  animation: sq-shimmer var(--drift, 6s) ease-in-out infinite;
+  animation-delay: var(--phase, 0s);
+}
+
+/* the travelling highlight, same idea as the bar under the home page panels */
+.tile.loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgba(220, 248, 242, 0.18) 40%,
+    rgba(235, 252, 248, 0.55) 50%,
+    rgba(220, 248, 242, 0.18) 60%,
+    transparent 80%
+  );
+  animation: tile-sweep var(--sweep, 1.5s) ease-in-out infinite;
+  animation-delay: var(--phase, 0s);
+}
+
+/* Colour runs on a five-step cycle and speed on a seven-step one, so a tile has
+   to travel 35 places before it meets its twin. Every gradient sinks to the same
+   deep blue and rises through a different blue-green. */
+.gallery-columns .tile.loading:nth-child(5n + 1) {
+  background-image: linear-gradient(135deg, #0d47a1, #1fa3b8, #0d47a1);
+}
+
+.gallery-columns .tile.loading:nth-child(5n + 2) {
+  background-image: linear-gradient(215deg, #16307a, #2d6bc4, #5abfb0, #16307a);
+}
+
+.gallery-columns .tile.loading:nth-child(5n + 3) {
+  background-image: linear-gradient(45deg, #063b7a, #0096c7, #6fd0c0, #063b7a);
+}
+
+.gallery-columns .tile.loading:nth-child(5n + 4) {
+  background-image: linear-gradient(300deg, #0a3d62, #1f7fc4, #48cae4, #0a3d62);
+}
+
+.gallery-columns .tile.loading:nth-child(5n + 5) {
+  background-image: linear-gradient(165deg, #14509e, #00b4d8, #7ad3c4, #14509e);
+}
+
+.gallery-columns .tile:nth-child(7n + 1) { --drift: 5.2s; --sweep: 1.30s; --phase: 0s; }
+.gallery-columns .tile:nth-child(7n + 2) { --drift: 6.8s; --sweep: 1.72s; --phase: -0.4s; }
+.gallery-columns .tile:nth-child(7n + 3) { --drift: 4.6s; --sweep: 1.12s; --phase: -0.9s; }
+.gallery-columns .tile:nth-child(7n + 4) { --drift: 7.4s; --sweep: 1.95s; --phase: -0.2s; }
+.gallery-columns .tile:nth-child(7n + 5) { --drift: 5.9s; --sweep: 1.48s; --phase: -1.1s; }
+.gallery-columns .tile:nth-child(7n + 6) { --drift: 8.2s; --sweep: 2.15s; --phase: -0.6s; }
+.gallery-columns .tile:nth-child(7n + 7) { --drift: 4.1s; --sweep: 1.60s; --phase: -1.4s; }
+
+.tile img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: opacity 0.45s ease;
+}
+
+.tile.loading img {
+  height: 0;
+  opacity: 0;
+}
+
+@keyframes tile-sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile.loading,
+  .tile.loading::after {
+    animation: none;
+  }
+
+  .tile img {
+    transition: none;
+  }
 }
 
 @media (max-width: 1160px) {
