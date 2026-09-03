@@ -212,8 +212,10 @@ a {
   text-decoration-thickness: 1px;
 }
 
+/* clicked links settle to the deep blue of the first shimmer square — calmer
+   than the vivid #2961f6 they start as, but unmistakably still blue */
 a:visited {
-  color: #3d6b47;
+  color: #0d47a1;
 }
 
 a:hover {
@@ -804,4 +806,27 @@ body.membership {
   .tier {
     padding: 24px 20px 20px;
   }
+}
+
+/* Printernet green. taken from getprinternet.com, where it is the brand's own
+   CTA colour. it has to survive :visited and :hover — the site's generic link
+   states would otherwise turn the name olive once clicked, or blue on hover —
+   so these are qualified with the element to outrank a:visited */
+a.printernet {
+  color: #357e47;
+}
+
+/* clicked, the brand green deepens rather than switching hue — the same idea
+   as ordinary links settling from #2961f6 to #0d47a1, kept inside the green so
+   Printernet still reads as Printernet. more specific than the generic
+   a:visited, so it wins */
+a.printernet:visited {
+  color: #2a6539;
+}
+
+/* hover has to sit past visited or a clicked link would barely respond, so it
+   goes deeper still. last in the block, since it ties with :visited on
+   specificity and source order breaks it */
+a.printernet:hover {
+  color: #1e4d2b;
 }
