@@ -8,11 +8,26 @@ Jake Weber's personal website. 2026 version. A simplified and trimmed back versi
 |---|---|
 | `index.html` | home |
 | `consulting.html` | consulting |
-| `blogroll.html` | people i'd follow |
+| `blogroll.html` | people to follow |
 | `yearbook.html` | year-by-year photos, books, desks, work, and journal |
+| `membership/index.html` | membership, served at `/membership` |
 
 `styleNew.css` styles the whole site. `yearbook.css` and `yearbook.js` are loaded
 only by the yearbook page, `photo-of-the-day.js` only by the home page.
+
+## Membership
+
+`/membership` is a directory with an `index.html` rather than a top-level
+`membership.html`, so GitHub Pages serves it at the clean URL. Because it sits a
+level down its stylesheet and home links are `../`-relative, not root-relative —
+a leading `/` resolves to the disk root when the file is opened straight off
+disk, and the page loses all its styling.
+
+Unlike the rest of the site the membership page scrolls rather than fitting the
+viewport, which is what `body class="membership"` turns on.
+
+The tier "join" buttons are placeholders — they open a pre-addressed email. When
+billing is wired up, those four `href`s are the only thing that needs to change.
 
 ## Photo of the day
 

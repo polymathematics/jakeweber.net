@@ -19,6 +19,7 @@
   <main class="page">
     <header class="site-header">
       <h1>jake <span>weber</span></h1>
+      <a class="member-badge" href="/membership">join the membership</a>
     </header>
 
     <section class="layout">
@@ -80,8 +81,9 @@
           <a target="_blank" rel="noopener noreferrer" href="/essays/essays.html">writing</a> /
           <a target="_blank" rel="noopener noreferrer" href="#">projects</a> /
           <a target="_blank" rel="noopener noreferrer" href="https://x.com/onlyfootnotes">twitter</a> /
-          <a target="_blank" rel="noopener noreferrer" href="/blogroll.html">people I'd follow</a> /
-          <a href="/yearbook.html">yearbook</a>
+          <a target="_blank" rel="noopener noreferrer" href="/blogroll.html">people to follow</a> /
+          <a href="/yearbook.html">yearbook</a> /
+          <a href="/membership">membership</a>
         </nav>
       </aside>
 
@@ -139,12 +141,11 @@
           <section class="block support">
             <h2>ways to support</h2>
             <ul>
+              <li><a href="/membership">become a member</a></li>
               <li><a target="_blank" rel="noopener noreferrer"
                   href="https://readpolymathematics.substack.com/">subscribe to my substack</a></li>
               <li><a target="_blank" rel="noopener noreferrer" href="https://app.getprinternet.com/">sign up for
                   printernet</a></li>
-              <li><a target="_blank" rel="noopener noreferrer" href="mailto:jacobweber530@gmail.com">reach out to
-                  chat!</a></li>
             </ul>
           </section>
         </div>
@@ -153,6 +154,38 @@
       </section>
     </section>
   </main>
+
+  <!-- ink-bleed filter for the ink-set headings. two passes: high-frequency
+       noise nudges the outline the way ink creeps along paper fibres, then a
+       second noise is quantised into hard steps and multiplied into the alpha,
+       so coverage either takes or it doesn't — newsprint grain rather than a
+       smooth wash -->
+  <svg width="0" height="0" aria-hidden="true" focusable="false"
+    style="position:absolute;width:0;height:0;overflow:hidden">
+    <filter id="ink-bleed" x="-15%" y="-15%" width="130%" height="130%"
+      color-interpolation-filters="sRGB">
+      <!-- letter-scale jitter. one noise cell is about one glyph wide at 18px,
+           so neighbouring letters get different offsets and each sits a hair
+           off the line — loose type rather than a wave. scale 1.4 means at
+           most +/-0.7px, which is the whole budget for "subtle" -->
+      <feTurbulence type="fractalNoise" baseFrequency="0.075" numOctaves="1" seed="31" result="loose" />
+      <feDisplacementMap in="SourceGraphic" in2="loose" scale="1.4"
+        xChannelSelector="R" yChannelSelector="G" result="shifted" />
+
+      <feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="2" seed="6" result="fibre" />
+      <feDisplacementMap in="shifted" in2="fibre" scale="0.7"
+        xChannelSelector="R" yChannelSelector="G" result="bled" />
+
+      <!-- turbulence, not fractalNoise: more contrast, less cloud -->
+      <feTurbulence type="turbulence" baseFrequency="0.95" numOctaves="1" seed="23" result="speck" />
+      <!-- discrete steps are what kill the watercolour look: no smooth ramp
+           between covered and not, just a handful of coverage levels -->
+      <feComponentTransfer in="speck" result="grain">
+        <feFuncA type="discrete" tableValues="0.8 1 0.92 1 0.86 1 0.97" />
+      </feComponentTransfer>
+      <feComposite in="bled" in2="grain" operator="in" />
+    </filter>
+  </svg>
 
   <script src="manifest.js"></script>
   <script src="photo-of-the-day.js"></script>
