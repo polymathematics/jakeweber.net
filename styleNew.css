@@ -523,6 +523,7 @@ body.membership {
    content box, so a tighter line box would crop the tops and tails of glyphs
    right off the letters */
 .membership-intro h2,
+.projects-intro h2,
 .block.about h2,
 .block.work h2 {
   font-family: "Lucida Grande", "Lucida Sans Unicode", "Myriad Pro", Helvetica, Arial, sans-serif;
@@ -535,7 +536,8 @@ body.membership {
   filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.85));
 }
 
-.membership-intro h2 {
+.membership-intro h2,
+.projects-intro h2 {
   margin: 0 0 14px;
   font-size: 38px;
   line-height: 1.15;
@@ -568,6 +570,7 @@ body.membership {
 /* without background-clip the transparent fill would erase the text entirely */
 @supports not ((-webkit-background-clip: text) or (background-clip: text)) {
   .membership-intro h2,
+  .projects-intro h2,
   .block.about h2,
   .block.work h2 {
     -webkit-text-fill-color: currentColor;
@@ -589,7 +592,8 @@ body.membership {
 .block.foundational h2,
 .block.recommendations h2,
 .block.support h2,
-.tier h3 {
+.tier h3,
+.project-group h2 {
   font-family: "Arial Black", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: 900;
   letter-spacing: -1.2px;
@@ -604,7 +608,8 @@ body.membership {
   .block.foundational h2,
   .block.recommendations h2,
   .block.support h2,
-  .tier h3 {
+  .tier h3,
+  .project-group h2 {
     filter: none;
   }
 }
@@ -793,7 +798,8 @@ body.membership {
     grid-template-columns: 1fr;
   }
 
-  .membership-intro h2 {
+  .membership-intro h2,
+  .projects-intro h2 {
     font-size: 30px;
     letter-spacing: -0.7px;
   }
@@ -829,4 +835,109 @@ a.printernet:visited {
    specificity and source order breaks it */
 a.printernet:hover {
   color: #1e4d2b;
+}
+
+/* projects */
+
+body.projects {
+  height: auto;
+}
+
+.projects .page {
+  height: auto;
+}
+
+.projects-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.projects-intro,
+.projects-panel {
+  padding: 26px 28px;
+}
+
+.projects-intro-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+
+.projects-lede p {
+  margin: 0 0 12px;
+  max-width: 68ch;
+  line-height: 1.55;
+}
+
+.projects-lede p:last-child {
+  margin-bottom: 0;
+}
+
+.projects-elsewhere {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.projects-elsewhere h2 {
+  margin-bottom: 0;
+}
+
+/* multi-column rather than a grid: the groups are wildly uneven — eight tools
+   against two pieces of hardware — and columns balance that on their own
+   instead of leaving a hole under the short ones */
+.project-groups {
+  column-count: 2;
+  column-gap: 44px;
+}
+
+.project-group {
+  break-inside: avoid;
+  margin: 0 0 26px;
+}
+
+.project-group:last-child {
+  margin-bottom: 0;
+}
+
+.project-group h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.project-group .strands li {
+  margin: 0 0 10px;
+}
+
+/* for the handful with nowhere left to point */
+.project-note {
+  margin-left: 4px;
+  font-size: 12px;
+  color: #777;
+  white-space: nowrap;
+}
+
+@media (max-width: 1160px) {
+  .projects-intro-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .projects-layout {
+    gap: 14px;
+  }
+}
+
+@media (max-width: 720px) {
+  .project-groups {
+    column-count: 1;
+  }
+
+  .projects-intro,
+  .projects-panel {
+    padding: 22px 20px;
+  }
 }
