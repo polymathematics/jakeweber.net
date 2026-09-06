@@ -4,7 +4,7 @@ date: 2026-09-06
 dateline: 09.06.26
 ---
 
-![A newsstand, its racks full of periodicals](../images/gallery/2023/8bf8c10c-6b8b-40b1-ad0d-fd7fd86e577a_1440x1799.jpg)
+![Showing my family my personal site in 2024](../images/gallery/2024/f64bbd8b-64f0-4b1c-9d02-acd5c1a42dd6_1020x1020.jpg)
 
 The internet can be a telephone. 
 
