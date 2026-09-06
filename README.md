@@ -11,6 +11,9 @@ Jake Weber's personal website. 2026 version. A simplified and trimmed back versi
 | `blogroll.html` | people to follow |
 | `yearbook.html` | year-by-year photos, books, desks, work, and journal |
 | `membership/index.html` | membership, served at `/membership` |
+| `projects/index.html` | projects, served at `/projects` |
+| `essays/essays.html` | the writing archive — **generated**, see below |
+| `essays/*.html` | one page per piece — **generated**, see below |
 
 `styleNew.css` styles the whole site. `yearbook.css` and `yearbook.js` are loaded
 only by the yearbook page, `photo-of-the-day.js` only by the home page.
@@ -41,6 +44,57 @@ local midnight.
 
 Note that `script.js` is deliberately *not* loaded on the home page: it redirects
 mobile user agents to `mobile.html`, which doesn't exist here.
+
+## Writing a post
+
+Write one markdown file in `essays/posts/`. That's the whole job — the page,
+its place in the archive, and the previous/next links at its foot are all built
+from it.
+
+    essays/posts/theinventors.md
+
+    title: The Inventors
+    deck: Looking for the ones who make their ideas real.
+    date: 2023-10-24
+    ---
+
+    In the last year or so, I've tapped into a new network of people...
+
+The header runs until the first line that is only dashes. `title` and `date`
+(as `YYYY-MM-DD`) are required; `deck` is the subtitle under the headline and
+can be left out. `dateline` overrides the printed date when it needs to say
+something the date alone can't — `dateline: 3.19.24, updated on 05.04.24`.
+`kicker` overrides the word above the headline, otherwise "writing".
+
+**The filename is the URL.** `theinventors.md` is served at
+`/essays/theinventors.html`, so renaming a file breaks every link anyone has
+ever made to it.
+
+The markdown is deliberately small: paragraphs, `##` and `###` subheads, `-`
+and `1.` lists, `>` quotes, `[links](url)`, `**bold**`, `*italic*`, `---`
+rules. Anything it can't do, write as HTML and it passes straight through —
+which is how the photo rows and margin notes work:
+
+    <div class="image-row">
+      <img src="../images/firstIssue.jpg">
+      <img src="../images/danHonCollab.jpg">
+    </div>
+
+    <p class="sidenote">A note out in the margin.</p>
+
+A link to an outside site opens in a new tab on its own; an internal one
+doesn't. Paths in raw HTML are `../`-relative, the same as everywhere under
+`essays/`.
+
+The archive page's own words — the paragraphs under "writing" and the
+"elsewhere" list beside them — live in `essays/index.md`, lede first, then a
+line of dashes, then the list.
+
+Then commit. That's it.
+
+**Never edit `essays/*.html`.** They're output, the same as `manifest.js`, and
+the next commit overwrites whatever you put there. Every one of them says so on
+its second line.
 
 ## Adding to the yearbook
 
@@ -77,6 +131,25 @@ across several years goes in each of those years' files, and the range is what
 tells a reader why the same line shows up again in 2021.
 
 Then commit. That's it — no other step.
+
+## What gets built
+
+Two things in this repo are generated rather than written, and the pre-commit
+hook in `.githooks/` rebuilds both on every commit so neither can drift:
+
+| built | from | by |
+|---|---|---|
+| `manifest.js` | `images/gallery/`, `books/`, `work/`, `journal/` | `make-manifest.sh` |
+| `essays/*.html` | `essays/posts/*.md`, `essays/index.md` | `make-essays.py` |
+
+Either can be run by hand at any time:
+
+    ./make-manifest.sh
+    ./make-essays.py
+
+`make-essays.py` needs nothing but Python 3 — the markdown it understands is
+small enough to carry with it, so there's nothing to install and nothing to
+keep up to date.
 
 ## How the manifest works
 
