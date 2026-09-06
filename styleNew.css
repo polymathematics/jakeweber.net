@@ -524,6 +524,8 @@ body.membership {
    right off the letters */
 .membership-intro h2,
 .projects-intro h2,
+.writing-intro h2,
+.essay-continue h2,
 .block.about h2,
 .block.work h2 {
   font-family: "Lucida Grande", "Lucida Sans Unicode", "Myriad Pro", Helvetica, Arial, sans-serif;
@@ -537,7 +539,8 @@ body.membership {
 }
 
 .membership-intro h2,
-.projects-intro h2 {
+.projects-intro h2,
+.writing-intro h2 {
   margin: 0 0 14px;
   font-size: 38px;
   line-height: 1.15;
@@ -571,6 +574,8 @@ body.membership {
 @supports not ((-webkit-background-clip: text) or (background-clip: text)) {
   .membership-intro h2,
   .projects-intro h2,
+  .writing-intro h2,
+  .essay-continue h2,
   .block.about h2,
   .block.work h2 {
     -webkit-text-fill-color: currentColor;
@@ -593,7 +598,10 @@ body.membership {
 .block.recommendations h2,
 .block.support h2,
 .tier h3,
-.project-group h2 {
+.project-group h2,
+.archive-year h2,
+.essay-elsewhere h2,
+.essay-comments h2 {
   font-family: "Arial Black", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: 900;
   letter-spacing: -1.2px;
@@ -609,7 +617,10 @@ body.membership {
   .block.recommendations h2,
   .block.support h2,
   .tier h3,
-  .project-group h2 {
+  .project-group h2,
+  .archive-year h2,
+  .essay-elsewhere h2,
+  .essay-comments h2 {
     filter: none;
   }
 }
@@ -939,5 +950,595 @@ body.projects {
   .projects-intro,
   .projects-panel {
     padding: 22px 20px;
+  }
+}
+
+/* ==========================================================================
+   writing — the archive index and the essays themselves
+
+   the division of labour here is the one a printed page uses: a serif carries
+   the reading, and the sans carries everything that tells you where you are —
+   kickers, datelines, subheads, the margin column. nothing is decorative that
+   isn't also doing a job.
+   ========================================================================== */
+
+/* Iowan Old Style is the text serif Apple Books sets by default and the best
+   reading face that ships on a Mac; Charter was cut for newsprint and picks up
+   the Linux side; Georgia catches everything else. all three have a large
+   x-height, which is what lets 18px hold its own against a 15px sans */
+:root {
+  --reading: "Iowan Old Style", Charter, "Bitstream Charter", Georgia,
+    "Palatino Linotype", Palatino, "Times New Roman", serif;
+}
+
+body.writing,
+body.essay {
+  height: auto;
+}
+
+.writing .page,
+.essay .page {
+  height: auto;
+}
+
+/* --- the index ---------------------------------------------------------- */
+
+.writing-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.writing-intro,
+.writing-panel {
+  padding: 26px 28px;
+}
+
+.writing-intro-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+
+.writing-lede p {
+  margin: 0 0 12px;
+  max-width: 68ch;
+  line-height: 1.55;
+}
+
+.writing-lede p:last-child {
+  margin-bottom: 0;
+}
+
+.writing-elsewhere {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.writing-elsewhere h2 {
+  margin-bottom: 0;
+}
+
+/* the archive is a contents page. one line per piece, three fields — title,
+   deck, date — on a single baseline, with the years as section rules. a grid
+   rather than a table because the deck is optional on a handful of the older
+   notes and a grid lets those rows simply come up short */
+/* a contents line stops binding once the date drifts far enough from the
+   title, so the rows stop short of the panel's own edge on a wide screen */
+.archive-year {
+  max-width: 1160px;
+  margin: 0 0 30px;
+}
+
+.archive-year:last-child {
+  margin-bottom: 0;
+}
+
+.archive-year h2 {
+  margin: 0 0 9px;
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.archive-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid #111;
+}
+
+.archive-list li {
+  margin: 0;
+  border-bottom: 1px solid #dcdcdc;
+}
+
+/* the whole row is the link, not just the title — a line in a table of
+   contents should be as easy to hit as it is to point at on paper */
+.entry {
+  display: grid;
+  grid-template-columns: minmax(0, 23em) minmax(0, 1fr) 5.5em;
+  gap: 8px 22px;
+  align-items: baseline;
+  padding: 8px 10px 9px;
+  color: inherit;
+  transition: background-color 160ms ease;
+}
+
+.entry:visited {
+  color: inherit;
+}
+
+.entry:hover {
+  background: #e8f1fd;
+  color: inherit;
+}
+
+.entry-title {
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: #2961f6;
+}
+
+.entry:visited .entry-title {
+  color: #0d47a1;
+}
+
+.entry:hover .entry-title {
+  color: #003cff;
+}
+
+/* the deck is the author's own subtitle, set in the reading face so the row
+   previews what the piece will look like when you open it */
+.entry-deck {
+  font-family: var(--reading);
+  font-size: 15px;
+  line-height: 1.35;
+  color: #555;
+}
+
+.entry-date {
+  justify-self: end;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: #777;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- an essay ----------------------------------------------------------- */
+
+/* an essay is set to the proportions of a page rather than to the width of the
+   browser: header, sheet and footer all stop at the same edge, so the whole
+   thing reads as one printed object sitting on the desk */
+.essay .page {
+  max-width: 1080px;
+  margin: 12px auto;
+}
+
+.essay-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.essay-sheet {
+  padding: 40px 44px 46px;
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 44px;
+  align-items: start;
+}
+
+/* the margin column carries the furniture — where you are and how to leave.
+   sticky, because on a long piece the way out should not be a scroll away */
+.essay-rail {
+  position: sticky;
+  top: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.rail-label {
+  margin: 0 0 10px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid #111;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #0b0b0b;
+}
+
+.rail-nav a {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.essay-article {
+  min-width: 0;
+}
+
+/* the measure. 620px of this serif runs to a little over sixty characters,
+   which is the band where the eye finds the next line without hunting for it.
+   the head shares it so headline, deck, rules and text all hang off one edge */
+.essay-head,
+.essay-body {
+  max-width: 620px;
+}
+
+.essay-kicker {
+  margin: 0 0 15px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #555;
+}
+
+/* the headline takes the same ink as the small headings, but reaches for a
+   filter tuned an octave lower: one noise cell has to be about one glyph wide
+   to read as loose type rather than as a ripple running through the word, and
+   a glyph at 44px is two and a half times the width of one at 18px */
+.essay-title {
+  margin: 0;
+  font-family: "Arial Black", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 900;
+  font-size: clamp(30px, 4.6vw, 44px);
+  line-height: 1.05;
+  letter-spacing: -1.5px;
+  color: #363534;
+  -webkit-text-stroke: 0.5px #363534;
+  filter: url(#ink-bleed-display);
+}
+
+@supports not (filter: url(#ink-bleed-display)) {
+  .essay-title {
+    filter: none;
+  }
+}
+
+.essay-deck {
+  margin: 17px 0 0;
+  font-family: var(--reading);
+  font-size: 20px;
+  font-style: italic;
+  line-height: 1.35;
+  color: #3a3a3a;
+}
+
+/* rule, dateline, rule: the sandwich a newspaper sets under a headline to
+   close the head off from the text. the second rule is the body's border-top */
+.essay-dateline {
+  margin: 24px 0 0;
+  padding: 10px 0 0;
+  border-top: 1px solid #111;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #555;
+}
+
+.essay-body {
+  margin-top: 11px;
+  padding-top: 30px;
+  border-top: 1px solid #111;
+  font-family: var(--reading);
+  font-size: 18px;
+  line-height: 1.62;
+  color: #1a1a18;
+}
+
+/* spaced rather than indented. a first-line indent is the more printed of the
+   two conventions, but it needs long paragraphs to read as anything other
+   than an accident, and these pieces are full of one-line ones */
+.essay-body p {
+  margin: 0 0 1.05em;
+  line-height: 1.62;
+}
+
+.essay-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* subheads step out of the reading face entirely. small, tracked and set in
+   the sans, they mark a turn in the argument without ever competing with the
+   headline — a magazine breaks a long column exactly this way */
+.essay-body h2,
+.essay-body h3,
+.essay-body h4 {
+  margin: 2.1em 0 0.75em;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  line-height: 1.35;
+  text-transform: uppercase;
+  color: #0b0b0b;
+}
+
+.essay-body h2:first-child,
+.essay-body h3:first-child,
+.essay-body h4:first-child {
+  margin-top: 0;
+}
+
+.essay-body ul,
+.essay-body ol {
+  margin: 0 0 1.05em;
+  padding-left: 1.35em;
+}
+
+.essay-body li {
+  margin: 0 0 0.5em;
+  line-height: 1.55;
+}
+
+.essay-body li:last-child {
+  margin-bottom: 0;
+}
+
+/* the quoted passages in these pieces are raw text with blank lines between
+   paragraphs and no markup, so the line breaks have to be honoured or the
+   whole quote runs together as one block */
+.essay-body blockquote {
+  margin: 1.7em 0;
+  padding: 3px 0 3px 20px;
+  border-left: 2px solid #111;
+  white-space: pre-line;
+  font-size: 17px;
+  line-height: 1.55;
+  color: #3a3a3a;
+}
+
+/* a margin note. inside the measure by default and out in the margin once
+   there is a margin to put it in — see the min-width block at the foot */
+.essay-body .sidenote {
+  margin: 1.4em 0;
+  padding-top: 8px;
+  border-top: 1px solid #bbb;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #666;
+}
+
+/* colour alone carries the link; the underline is dialled back to a tint so a
+   paragraph with six of them still reads as a paragraph */
+.essay-body a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: rgba(41, 97, 246, 0.35);
+  text-underline-offset: 3px;
+}
+
+.essay-body a:hover {
+  text-decoration-color: currentColor;
+}
+
+.essay-body hr {
+  margin: 2em 0;
+  border: 0;
+  border-top: 1px solid #111;
+}
+
+.essay-body img {
+  max-width: 100%;
+  width: auto !important;
+  height: auto !important;
+  max-height: 560px;
+  border: 1px solid #111;
+}
+
+/* the photo strips in the older pieces are hand-sized in inline style
+   attributes — 350 by 450, mostly — which is why these have to be marked
+   important. left alone, a 350px photo would sit at 350px inside a 620px
+   measure and the row would break the column open */
+.essay-body .image-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 1.8em 0;
+}
+
+/* one piece sets three photos in a row. two columns would leave the third
+   sitting alone at half width beside a hole, so the row counts itself */
+.essay-body .image-row:has(img:nth-child(3):last-child) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.essay-body .image-row img {
+  display: block;
+  width: 100% !important;
+  height: auto !important;
+  max-height: none;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+}
+
+/* --- the foot of an essay ----------------------------------------------- */
+
+.essay-foot {
+  padding: 26px 28px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+
+.essay-continue h2 {
+  margin: 0 0 14px;
+  font-size: 24px;
+  line-height: 1.1;
+  letter-spacing: -0.6px;
+}
+
+.essay-elsewhere {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.essay-elsewhere h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.continue {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.continue li {
+  margin: 0 0 14px;
+}
+
+.continue li:last-child {
+  margin-bottom: 0;
+}
+
+.continue-label {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #777;
+}
+
+.continue-title {
+  font-family: var(--reading);
+  font-size: 17px;
+  line-height: 1.3;
+}
+
+.essay-comments {
+  padding: 26px 28px;
+}
+
+.essay-comments h2 {
+  margin: 0 0 14px;
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+/* the comment widget writes its own <h3>Comments</h3> as the first thing
+   inside its container. everything else it renders is a form we have no other
+   copy of; this one line we do */
+#HCB_comment_box h3 {
+  display: none;
+}
+
+/* --- narrower ----------------------------------------------------------- */
+
+/* the sheet's slack: 620px of measure inside a 780px column. a margin note
+   moves out into it, and a photo plate widens to fill the whole column, the
+   way a picture breaks the measure on a printed page. the threshold is the
+   width at which .page stops growing and the slack becomes exactly 160px */
+@media (min-width: 1120px) {
+  .essay-body .sidenote {
+    float: right;
+    clear: right;
+    width: 148px;
+    margin: 0.35em -160px 0.9em 0;
+    padding-top: 7px;
+  }
+
+  .essay-body .image-row {
+    margin-right: -160px;
+  }
+}
+
+/* below this the sheet has no margin column left to lay out, so the rail lies
+   down across the top of the piece instead */
+@media (max-width: 1000px) {
+  .essay-sheet {
+    grid-template-columns: 1fr;
+    gap: 26px;
+  }
+
+  .essay-rail {
+    position: static;
+  }
+
+  .rail-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+  }
+
+  .rail-nav a {
+    margin-bottom: 0;
+  }
+
+}
+
+@media (max-width: 1160px) {
+  .writing-intro-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .writing-layout,
+  .essay-layout {
+    gap: 14px;
+  }
+
+  /* stacked: title and date keep the top line between them and the deck
+     drops underneath, rather than the date being left on a line of its own */
+  .entry {
+    grid-template-columns: minmax(0, 1fr) 5.5em;
+  }
+
+  .entry-date {
+    grid-row: 1;
+    grid-column: 2;
+  }
+
+  .entry-deck {
+    grid-row: 2;
+    grid-column: 1 / -1;
+  }
+
+  .essay-foot {
+    grid-template-columns: 1fr;
+    gap: 26px;
+  }
+}
+
+@media (max-width: 720px) {
+  .writing-intro h2 {
+    font-size: 30px;
+    letter-spacing: -0.7px;
+  }
+
+  .writing-intro,
+  .writing-panel,
+  .essay-foot,
+  .essay-comments {
+    padding: 22px 20px;
+  }
+
+  .essay-sheet {
+    padding: 26px 22px 30px;
+  }
+
+  .essay-body {
+    font-size: 17px;
+  }
+
+  .essay-deck {
+    font-size: 18px;
+  }
+
+  .essay-body .image-row {
+    gap: 8px;
   }
 }
