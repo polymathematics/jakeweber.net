@@ -1326,6 +1326,12 @@ body.essay {
   border-top: 1px solid #111;
 }
 
+/* a photo standing on its own in the column, rather than one of a plate */
+.essay-body > img {
+  display: block;
+  margin: 1.8em 0;
+}
+
 .essay-body img {
   max-width: 100%;
   width: auto !important;

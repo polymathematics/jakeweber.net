@@ -51,6 +51,10 @@ VOID = {"img", "br", "hr", "input", "meta", "link", "source", "col"}
 # empty item, which is a thing a few of the older pieces actually contain
 BULLET = r"^\s*([-*+]|\d+\.)(?:[ \t]+|[ \t]*$)"
 
+# one ![alt](src), and a line made of nothing but those
+IMAGE = r"!\[([^\]]*)\]\(([^)\s]+)\)"
+IMAGE_LINE = re.compile(r"^\s*(?:%s\s*)+$" % IMAGE)
+
 
 # blocks that start a run of raw html rather than a paragraph that happens to
 # open with a tag
@@ -65,9 +69,27 @@ BLOCK_TAGS = {
 # markdown
 # --------------------------------------------------------------------------
 
+def asset(src):
+    """Every page under essays/ is one directory down, so assets are ../ from
+    here. Accept the path with or without that prefix, because forgetting it is
+    the one mistake worth being forgiving about."""
+    if src.startswith("/images/"):
+        return ".." + src
+    if src.startswith("images/"):
+        return "../" + src
+    return src
+
+
+def img_tag(alt, src):
+    return '<img src="%s" alt="%s">' % (asset(src), html_mod.escape(alt, quote=True))
+
+
 def inline(text):
     """Spans. Raw html is left alone, so this must never escape anything."""
-    # links first: their bracketed text must not be read as emphasis markers.
+    # images before links, or ![alt](src) is read as a link with a stray !
+    text = re.sub(r"!\[([^\]]*)\]\(([^)\s]+)\)",
+                  lambda m: img_tag(m.group(1), m.group(2)), text)
+    # links: their bracketed text must not be read as emphasis markers.
     # an off-site link opens in a new tab, an internal one does not - which is
     # a decision the markup should not have to keep restating
     def link(m):
@@ -134,6 +156,20 @@ def to_html(md):
             i += 1
             continue
 
+        # photographs. one on its own is a figure in the column; two or more
+        # together are a plate, which is the grid the older pieces already use
+        if IMAGE_LINE.match(line):
+            shots = []
+            while i < len(lines) and IMAGE_LINE.match(lines[i]):
+                shots += re.findall(IMAGE, lines[i])
+                i += 1
+            if len(shots) == 1:
+                out.append(img_tag(*shots[0]))
+            else:
+                out.append('<div class="image-row">\n%s\n</div>' % "\n".join(
+                    "  " + img_tag(a, s) for a, s in shots))
+            continue
+
         m = re.match(BULLET, line)
         if m:
             ordered = m.group(1).endswith(".")
@@ -169,7 +205,7 @@ def to_html(md):
         para = []
         while i < len(lines) and lines[i].strip() and not opens_raw_html(lines[i]) \
                 and not re.match(r"^\s*(?:#{1,6}\s|>|-{3,}\s*$)", lines[i]) \
-                and not re.match(BULLET, lines[i]):
+                and not re.match(BULLET, lines[i]) and not IMAGE_LINE.match(lines[i]):
             para.append(lines[i].strip())
             i += 1
         out.append("<p>%s</p>" % inline(" ".join(para)))
@@ -551,6 +587,19 @@ def main():
             elsewhere=indent(elsewhere, "            "),
             filters=FILTERS,
         ))
+
+    missing = []
+    for name in sorted(os.listdir(OUT)):
+        if not name.endswith(".html"):
+            continue
+        page = open(os.path.join(OUT, name), encoding="utf-8").read()
+        for src in re.findall(r'src="([^"]+)"', page):
+            if src.startswith(("http://", "https://", "data:", "//")):
+                continue
+            if not os.path.exists(os.path.normpath(os.path.join(OUT, src))):
+                missing.append("  %s -> %s" % (name, src))
+    if missing:
+        sys.exit("these pages point at files that aren't there:\n" + "\n".join(missing))
 
     print("wrote %d essays and the archive index" % len(posts))
 

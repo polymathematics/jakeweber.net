@@ -70,15 +70,32 @@ something the date alone can't — `dateline: 3.19.24, updated on 05.04.24`.
 `/essays/theinventors.html`, so renaming a file breaks every link anyone has
 ever made to it.
 
-The markdown is deliberately small: paragraphs, `##` and `###` subheads, `-`
-and `1.` lists, `>` quotes, `[links](url)`, `**bold**`, `*italic*`, `---`
-rules. Anything it can't do, write as HTML and it passes straight through —
-which is how the photo rows and margin notes work:
+### Photos
 
-    <div class="image-row">
-      <img src="../images/firstIssue.jpg">
-      <img src="../images/danHonCollab.jpg">
-    </div>
+A photo is a link with a `!` in front of it. The text in the brackets is the
+alt text — what a screen reader says, and what shows if the image doesn't load:
+
+    ![A newsstand, its racks full of periodicals](../images/gallery/2023/newsstand.jpg)
+
+One on a line of its own is a figure in the column. **Two or more on
+consecutive lines become a plate** — the same grid the older pieces use, two
+across, or three if there are exactly three:
+
+    ![Reading at Jester King](../images/readingAtJesterKing.jpg)
+    ![Issues going out](../images/makingIssues.jpg)
+
+Paths are `../`-relative because every page sits one directory down, but
+`images/...` works too and gets the `../` added for you.
+
+**A path that doesn't exist stops the commit.** The build fails and names the
+file, so a broken photo can't reach the site.
+
+### Everything else
+
+The markdown is deliberately small: paragraphs, `##` and `###` subheads, `-`
+and `1.` lists, `>` quotes, `[links](url)`, `![photos](path)`, `**bold**`,
+`*italic*`, `---` rules. Anything it can't do, write as HTML and it passes
+straight through — which is how the margin notes work:
 
     <p class="sidenote">A note out in the margin.</p>
 

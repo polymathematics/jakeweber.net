@@ -4,6 +4,8 @@ date: 2026-09-06
 dateline: 09.06.26
 ---
 
+![A newsstand, its racks full of periodicals](../images/gallery/2023/8bf8c10c-6b8b-40b1-ad0d-fd7fd86e577a_1440x1799.jpg)
+
 The internet can be a telephone. 
 
 These days a lot of the internet feels like eavesdropping or talking to a wall, but the best of the web feels like a conversation. 
