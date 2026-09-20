@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <meta name="description" content="Every podcast episode and piece of writing I've recommended in a roundup post, 2022–2026.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Recommendations — jake weber">
+  <meta name="twitter:description" content="Every podcast episode and piece of writing I've recommended in a roundup post, 2022–2026.">
+  <meta name="twitter:image" content="/images/preview.png">
+  <meta property="og:image" content="/images/preview.png">
+  <link rel="shortcut icon" type="image/x-icon" href="/images/shortcut.png">
+  <title>Recommendations — jake weber</title>
+  <link rel="stylesheet" href="styleNew.css" />
+
+  <!-- page-specific styles. everything here is built from styleNew.css's own
+       values — #111 rules, the #2961f6 link blue, the #e8f1fd row hover, the
+       --reading serif — so the page carries no colours of its own. lift this
+       block into recommendations.css if it ever wants to live beside
+       yearbook.css. -->
+  <style>
+    /* like the writing archive, this page scrolls rather than fitting the
+       viewport — there are 182 rows in it */
+    body.recs,
+    body.recs .page {
+      height: auto;
+    }
+
+    .recs-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .recs-intro,
+    .recs-panel {
+      padding: 26px 28px;
+    }
+
+    /* the lede leads slightly: it carries the count row beneath it, and the
+       elsewhere column only needs the width its longest link asks for */
+    .recs-intro-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+      gap: 48px;
+      align-items: start;
+    }
+
+    .recs-lede p {
+      margin: 0 0 12px;
+      max-width: 66ch;
+      line-height: 1.55;
+    }
+
+    .recs-lede p:last-child {
+      margin-bottom: 0;
+    }
+
+    .recs-elsewhere {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .recs-elsewhere h2 {
+      margin-bottom: 0;
+    }
+
+    /* the count row. three figures under the lede, set in the tabular numerals
+       the archive dates already use, divided by the same hairline as the
+       contents rows */
+    .recs-tallies {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 24px;
+      /* the rule runs the measure of the lede above it, not the whole column */
+      max-width: 66ch;
+      margin: 18px 0 0;
+      border-top: 1px solid #111;
+      padding-top: 14px;
+    }
+
+    .recs-tally {
+      flex: 1 1 0;
+      min-width: 76px;
+    }
+
+    .recs-tally b {
+      display: block;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.6px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .recs-tally span {
+      display: block;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      color: #777;
+      margin-top: 3px;
+    }
+
+    /* tabs. the two halves of the archive are peers, so they read as a pair of
+       headings with a rule beneath, not as buttons */
+    .recs-tabs {
+      display: flex;
+      gap: 0;
+      margin-top: 26px;
+      border-bottom: 1px solid #111;
+    }
+
+    .recs-tabs button {
+      font-family: inherit;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      background: none;
+      border: 0;
+      cursor: pointer;
+      color: #777;
+      padding: 6px 16px 9px;
+      margin-bottom: -1px;
+      border-bottom: 3px solid transparent;
+    }
+
+    .recs-tabs button:first-child {
+      padding-left: 0;
+    }
+
+    .recs-tabs button[aria-selected="true"] {
+      color: #0b0b0b;
+      border-bottom-color: #2961f6;
+    }
+
+    .recs-tabs button:hover {
+      color: #003cff;
+    }
+
+    .recs-tabs .tcount {
+      font-weight: 400;
+      font-size: 12px;
+      color: #777;
+      margin-left: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* controls stay with you down a long archive */
+    .recs-controls {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: #f3f3f3;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 0;
+      margin-bottom: 4px;
+      border-bottom: 1px solid #dcdcdc;
+    }
+
+    .recs-search {
+      flex: 1 1 240px;
+      min-width: 0;
+    }
+
+    .recs-search input {
+      width: 100%;
+      font-family: inherit;
+      font-size: 15px;
+      color: #0b0b0b;
+      background: #fff;
+      border: 1px solid #111;
+      padding: 8px 11px;
+    }
+
+    .recs-search input::placeholder {
+      color: #888;
+    }
+
+    .recs-seg {
+      display: flex;
+      border: 1px solid #111;
+      background: #fff;
+    }
+
+    .recs-seg button,
+    .recs-toggle {
+      font-family: inherit;
+      font-size: 13px;
+      background: none;
+      border: 0;
+      cursor: pointer;
+      color: #0b0b0b;
+      padding: 8px 13px;
+      white-space: nowrap;
+    }
+
+    .recs-seg button + button {
+      border-left: 1px solid #111;
+    }
+
+    .recs-seg button[aria-pressed="true"] {
+      background: #0b0b0b;
+      color: #f3f3f3;
+    }
+
+    .recs-seg button:hover:not([aria-pressed="true"]),
+    .recs-toggle:hover {
+      background: #e8f1fd;
+    }
+
+    .recs-toggle {
+      border: 1px solid #111;
+      background: #fff;
+    }
+
+    .recs-toggle[aria-pressed="true"] {
+      background: #0b0b0b;
+      color: #f3f3f3;
+    }
+
+    .recs-count {
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      color: #777;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    /* a row. the same three-field contents line the writing archive uses —
+       title, deck, date — but the row carries two links rather than being one,
+       so it is a div with the grid on it instead of an anchor */
+    .rec-entry {
+      display: grid;
+      grid-template-columns: minmax(0, 23em) minmax(0, 1fr) 7.5em;
+      gap: 4px 22px;
+      align-items: baseline;
+      padding: 9px 10px 10px;
+      transition: background-color 160ms ease;
+    }
+
+    .rec-entry:hover {
+      background: #e8f1fd;
+    }
+
+    .rec-title {
+      font-weight: 700;
+      letter-spacing: -0.2px;
+    }
+
+    .rec-note {
+      font-family: var(--reading);
+      font-size: 15px;
+      line-height: 1.35;
+      color: #555;
+    }
+
+    .rec-meta {
+      justify-self: end;
+      text-align: right;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      color: #777;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .rec-meta a {
+      color: #777;
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+    }
+
+    .rec-meta a:visited {
+      color: #777;
+    }
+
+    .rec-meta a:hover {
+      color: #003cff;
+    }
+
+    /* the show, writer or kind sitting under a title when the list is grouped
+       the other way */
+    .rec-tags {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 2px;
+    }
+
+    .rec-tag {
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: lowercase;
+      color: #555;
+      border: 1px solid #dcdcdc;
+      padding: 1px 7px;
+    }
+
+    /* a side mention — named in passing inside another entry rather than
+       recommended in its own right. it sits a step back: no number, a rule to
+       its left, and the whole row one shade quieter */
+    .rec-entry--aside {
+      border-left: 3px solid #dcdcdc;
+      padding-left: 14px;
+    }
+
+    .rec-entry--aside .rec-note,
+    .rec-entry--aside .rec-meta {
+      color: #888;
+    }
+
+    .rec-num {
+      display: none;
+    }
+
+    .rec-group {
+      max-width: 1160px;
+      margin: 0 0 30px;
+    }
+
+    .rec-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .rec-group h2 {
+      margin: 0 0 9px;
+      font-size: 18px;
+      line-height: 1.1;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .rec-group h2 .rec-group-count {
+      font-weight: 400;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      color: #777;
+      margin-left: auto;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .rec-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      border-top: 1px solid #111;
+    }
+
+    .rec-list li {
+      margin: 0;
+      border-bottom: 1px solid #dcdcdc;
+    }
+
+    .recs-empty {
+      font-family: var(--reading);
+      font-size: 18px;
+      color: #777;
+      padding: 40px 0;
+    }
+
+    .recs-foot {
+      margin-top: 26px;
+      padding-top: 16px;
+      border-top: 1px solid #111;
+      font-size: 13px;
+      color: #555;
+      max-width: 72ch;
+    }
+
+    .recs-foot p {
+      margin: 0 0 8px;
+    }
+
+    .recs-foot p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* the two columns hold their shape down to a laptop; the gutter gives way
+       before the columns do */
+    @media (max-width: 1240px) {
+      .recs-intro-grid {
+        gap: 36px;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .recs-intro-grid {
+        grid-template-columns: 1fr;
+        gap: 28px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .recs-intro,
+      .recs-panel {
+        padding: 22px 20px;
+      }
+
+      /* the contents line stops binding on a phone — the three fields stack
+         and the roundup moves under the note rather than off to the right */
+      .rec-entry {
+        grid-template-columns: 1fr;
+        gap: 4px;
+        padding: 12px 8px;
+      }
+
+      .rec-meta {
+        justify-self: start;
+        text-align: left;
+      }
+
+      .recs-tabs button {
+        font-size: 16px;
+        padding-inline: 11px;
+      }
+
+      .recs-tally b {
+        font-size: 20px;
+      }
+
+      .recs-tallies {
+        gap: 10px 28px;
+      }
+    }
+  </style>
+</head>
+
+<body class="recs">
+  <main class="page">
+    <header class="site-header">
+      <h1><a href="/" style="color: inherit; text-decoration: none;">jake <span>weber</span></a></h1>
+      <a class="member-badge" href="/membership/index.html">join the membership</a>
+    </header>
+
+    <section class="recs-layout">
+
+      <div class="recs-intro box">
+        <div class="recs-intro-grid">
+          <section class="block recs-lede">
+            <h2>recommendations</h2>
+            <p>Every podcast episode and every piece of writing I've recommended in a roundup post — twenty-two of them, from May 2022 to the summer of 2026. Pulled out of the posts themselves so the whole archive sits on one page instead of scattered across four years of newsletters.</p>
+
+            <p>Search it, or sort it by who made the thing rather than by when I found it. That second view is the interesting one: it shows what I keep going back to.</p>
+            <div class="recs-tallies" id="tallies"></div>
+          </section>
+
+          <section class="block recs-elsewhere">
+            <h2>elsewhere</h2>
+            <ul class="strands">
+              <li><a target="_blank" rel="noopener noreferrer" href="https://readpolymathematics.substack.com/">substack</a> — where the roundups live</li>
+              <li><a href="/blogroll.html">people to follow</a> — creative folks online I am currently actively following</li>
+              <li><a class="printernet" target="_blank" rel="noopener noreferrer" href="https://app.getprinternet.com/">printernet</a>: the best writing from the internet, in print</li>
+            </ul>
+            <div class="shimmer-squares" aria-hidden="true">
+              <div class="sq sq-a"></div>
+              <div class="sq sq-b"></div>
+              <div class="sq sq-c"></div>
+              <div class="sq sq-d"></div>
+              <div class="sq sq-e"></div>
+            </div>
+          </section>
+        </div>
+
+        <div class="recs-tabs" role="tablist" aria-label="Recommendation type">
+          <button id="tab-pod" type="button" role="tab" aria-selected="true" aria-controls="list">podcasts<span class="tcount" id="tc-pod"></span></button>
+          <button id="tab-read" type="button" role="tab" aria-selected="false" aria-controls="list">reading<span class="tcount" id="tc-read"></span></button>
+        </div>
+      </div>
+
+      <div class="recs-panel box">
+        <div class="recs-controls">
+          <div class="recs-search">
+            <label class="visually-hidden" for="q" style="position:absolute;left:-9999px;">Search recommendations</label>
+            <input id="q" type="search" placeholder="search title, author, show, roundup…" autocomplete="off">
+          </div>
+          <div class="recs-seg" role="group" aria-label="Group by">
+            <button id="by-a" type="button" aria-pressed="true">by show</button>
+            <button id="by-post" type="button" aria-pressed="false">by roundup</button>
+          </div>
+          <button id="toggle-also" class="recs-toggle" type="button" aria-pressed="false">+ side mentions</button>
+          <span class="recs-count" id="count"></span>
+        </div>
+
+        <div id="list" role="tabpanel"></div>
+
+        <div class="recs-foot">
+          <p>Every note is quoted from the roundup it appeared in, word for word. Three entries carry no note because none was written. Where a passage quoted from the piece itself has been left out, the gap is marked […]. Numbered rows are recommendations proper; rows set back behind a rule are side mentions — named in passing inside another entry, or in a different section of the post. Those are hidden until you ask for them.</p>
+          <p>A handful of episodes were originally linked with bare YouTube URLs that no longer resolve; those titles aren't linked, but the roundup they came from is. The July 2026 roundup recommends no outside episodes, and the November 2022 one is the only post with no reading picks.</p>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <script>
+const P = {
+  may22:{n:"A Roundup (May 2022)",d:"May 2022",u:"https://readpolymathematics.substack.com/p/a-roundup-may-2022"},
+  jun22:{n:"A Roundup (June 2022)",d:"Jun 2022",u:"https://readpolymathematics.substack.com/p/a-roundup-june-2022"},
+  jul22:{n:"A Roundup (July 2022)",d:"Jul 2022",u:"https://readpolymathematics.substack.com/p/a-roundup-july-2022"},
+  aug22:{n:"A Roundup (August 2022)",d:"Aug 2022",u:"https://readpolymathematics.substack.com/p/a-roundup-august-2022"},
+  sep22:{n:"A Roundup (September 2022)",d:"Sep 2022",u:"https://readpolymathematics.substack.com/p/a-roundup-september-2022"},
+  oct22:{n:"A Spooky Roundup (October 2022)",d:"Oct 2022",u:"https://readpolymathematics.substack.com/p/a-spooky-roundup-october-2022"},
+  nov22:{n:"A Roundup (November 2022)",d:"Nov 2022",u:"https://readpolymathematics.substack.com/p/a-roundup-november-2022"},
+  jan23:{n:"A Roundup (January 2023)",d:"Jan 2023",u:"https://readpolymathematics.substack.com/p/a-roundup-january-2023"},
+  feb23:{n:"A Roundup (February 2023)",d:"Feb 2023",u:"https://readpolymathematics.substack.com/p/a-roundup-february-2023"},
+  mar23:{n:"A Roundup (March 2023)",d:"Mar 2023",u:"https://readpolymathematics.substack.com/p/a-roundup-march-2023"},
+  apr23:{n:"A Roundup (April 2023)",d:"Apr 2023",u:"https://readpolymathematics.substack.com/p/a-roundup"},
+  may23:{n:"A (little late) Roundup (May 2023)",d:"May 2023",u:"https://readpolymathematics.substack.com/p/a-little-late-roundup-may-2023"},
+  sum23:{n:"Summer Roundup (June and July 2023)",d:"Jun–Jul 2023",u:"https://readpolymathematics.substack.com/p/summer-roundup-june-and-july-2023"},
+  aug23:{n:"A Roundup (August 2023)",d:"Aug 2023",u:"https://readpolymathematics.substack.com/p/a-roundup-august-2023"},
+  fal23:{n:"An Autumn Roundup (Fall 2023)",d:"Sep–Oct 2023",u:"https://readpolymathematics.substack.com/p/an-autumn-roundup-fall-2023"},
+  nov23:{n:"A Roundup (November 2023)",d:"Nov 2023",u:"https://readpolymathematics.substack.com/p/a-roundup-november-roundup"},
+  jan24:{n:"A Roundup (January 2024)",d:"Jan 2024",u:"https://readpolymathematics.substack.com/p/a-roundup-january-2024"},
+  fm24:{n:"A Roundup (February and March 2024)",d:"Feb–Mar 2024",u:"https://readpolymathematics.substack.com/p/a-roundup-february-and-march-2024"},
+  apr24:{n:"A Roundup (April 2024)",d:"Apr 2024",u:"https://readpolymathematics.substack.com/p/a-roundup-april-2024"},
+  sum24:{n:"Summer Roundup (2024)",d:"May–Jul 2024",u:"https://readpolymathematics.substack.com/p/summer-roundup-2024"},
+  jan25:{n:"January Roundup (2025)",d:"Jan 2025",u:"https://readpolymathematics.substack.com/p/january-roundup-2025"},
+  sum26:{n:"Summer Roundup! (2026)",d:"Jul 2026",u:"https://readpolymathematics.substack.com/p/summer-roundup-2026"}
+};
+const ORDER = ["may22", "jun22", "jul22", "aug22", "sep22", "oct22", "nov22", "jan23", "feb23", "mar23", "apr23", "may23", "sum23", "aug23", "fal23", "nov23", "jan24", "fm24", "apr24", "sum24", "jan25", "sum26"];
+const POD = [
+  {t:"Matt Mullenweg",s:"How I Built This",p:"may22",u:"https://ma.tt/2022/03/guy-razs-how-i-built-this/",n:"Matt is a well-spoken and thoughtful inventor, with a positive vision for the future of software and work. In this interview Guy and Matt discuss the origins of Matt’s interest in software, how he started programming, the early days of blogging, Matt’s leap into the Open Source world and the project that eventually forked into WordPress, and much more."},
+  {t:"Tim Leatherman",s:"How I Built This",p:"may22",u:"https://podcasts.apple.com/cl/podcast/leatherman-tool-group-tim-leatherman/id1150510297",n:"I never knew the history of the Leatherman or about Tim’s wonderfully adventurous life and tinkering spirit. This episode will appeal to industrial designers and other physical makers of any type, who toil with their hands and obsess over getting a tool or product right. Tim had a vision of a useful invention and didn’t give up even when it seemed like the world didn’t want what he had built."},
+  {t:"Tony Fadell",s:"The Tim Ferriss Show",p:"may22",u:"https://tim.blog/2022/04/27/tony-fadell-build/",n:"Tony Fadell is the engineer and designer credited as the inventor of the iPod and the iPhone (and much more, check out his wiki). This is his second appearance on the Tim Ferriss Show, so you may be interested in starting with the first for all the stories of early prototyping at Apple and how Steve Jobs hired Tony to build the first iPod. In this second appearance, Tony and Tim discuss Steve Jobs’ legacy and leadership style, best practices of product design and managing teams, some fun tidbits on General Magic, sustainability and carbon capture, Tony’s investment portfolio trying to save the world, and much more."},
+  {t:"Your Outie Is Skilled at Lovemaking (with Paul Bloom)",s:"Very Bad Wizards",p:"may22",u:"https://www.verybadwizards.com/236",n:"Disclaimer! I am only recommending this to you if you watched the show ‘Severance’ on Apple TV. If not, it would be mostly pointless, because in this episode Tamler and David chat with Paul Bloom (Yale psychology professor and frequent guest of VBW) about the philosophical implications of severing yourself. When my younger brother Luke got our whole family to binge ‘Severance’, we were all instant fans. The storytelling, aesthetics and set design, and core concepts explored are all incredible."},
+  {t:"Tony Fadell (first appearance)",s:"The Tim Ferriss Show",p:"may22",u:"https://tim.blog/2019/12/23/tony-fadell/",n:"This is his second appearance on the Tim Ferriss Show, so you may be interested in starting with the first for all the stories of early prototyping at Apple and how Steve Jobs hired Tony to build the first iPod.",b:1},
+  {t:"James Dyson",s:"How I Built This",p:"may22",u:"https://podcasts.apple.com/us/podcast/dyson-james-dyson/id1150510297",n:"Two of my all time favorites are his interviews with James Dyson and Jamie Siminoff.",b:1},
+  {t:"Jamie Siminoff",s:"How I Built This",p:"may22",u:"https://podcasts.apple.com/us/podcast/ring-jamie-siminoff/id1150510297",n:"Two of my all time favorites are his interviews with James Dyson and Jamie Siminoff.",b:1},
+  {t:"A.J. Jacobs",s:"The Tim Ferriss Show",p:"may22",u:"https://tim.blog/2022/04/22/a-j-jacobs-2/",n:"Also check out his recent podcast with Tim Ferriss if you like this.",b:1},
+  {t:"Daniel Gross",s:"Conversations with Tyler",p:"jun22",u:"https://conversationswithtyler.com/episodes/daniel-gross/",n:"Daniel Gross is the coauthor of Tyler’s new book Talent, and well-known for his time spent as a partner at Y Combinator. Who better to listen to about a new book than the two authors themselves? Here is a gem from the episode, a good interview question to break the boring usual questions: “What are the open tabs on your computer or phone right now?”"},
+  {t:"Tyler Cowen on talent",s:"Very Serious",p:"jun22",u:"https://podcasts.apple.com/us/podcast/on-the-very-serious-podcast-tyler-cowen-on/id1601727251",n:"If you have an appetite for more on talent, this one is good too!"},
+  {t:"Saifedean Ammous",s:"Lex Fridman Podcast",p:"jun22",u:"https://lexfridman.com/saifedean-ammous/",n:"This one is good for a light hearted, but at times technical, discussion on money. It includes a discussion on traditional fiat money like the US Dollar as well as new cryptocurrencies like Bitcoin. There is also a great overview of the gold standard and how the world moved off of it. Listen for answers to questions like “isn’t money just valuable because we all believe it is valuable?” and “what makes something valuable?”, or “why are diamonds used in engagement rings?”."},
+  {t:"Sid Sijbrandij",s:"Distributed with Matt Mullenweg",p:"jun22",u:"https://distributed.blog/2021/05/20/episode-27-leading-with-values-sid-sijbrandij-joins-matt-mullenweg-to-talk-about-gitlab-transparency-and-growing-a-distributed-company/",n:"Sid is the founder of GitLab. This episode contains wonderful insight on running large organizations with values, the extreme culture of documentation and making nearly all internal documents public, how to run a distributed organization, how to make meetings effective, and navigating radical transparency (such as live streaming all company meetings on YouTube)."},
+  {t:"Barkha Dutt on the Nuances of Indian Life",s:"Conversations with Tyler",p:"jul22",u:"https://conversationswithtyler.com/episodes/barkha-dutt/",n:"This is an incredible podcast episode that is extremely info-dense. I learned so much from this one, and Barkha expertly navigates each topic discussed with style and ease."},
+  {t:"How Would the End of Roe v. Wade Change America?",s:"Plain English with Derek Thompson",p:"jul22",u:"https://podcasts.apple.com/us/podcast/how-would-the-end-of-roe-v-wade-change-america/id1594471023",n:"This episode is important and expertly executed by Derek, Melissa Murray, and Margot Sanger-Katz. It was recorded after the leaked draft of the Roe decision, but everything discussed is perfectly relevant now that the Supreme Court has indeed overturned Roe v. Wade."},
+  {t:"Robin Hanson",s:"Lex Fridman Podcast",p:"jul22",n:"I discovered Robin Hanson from this episode (see below for more), but suffice to say that his range left me in awe. This episode touches on so many important topics, and with Robin at the wheel you feel safe even as he guides you through things like: alien civilizations, artificial intelligences, war and existential risk, and the taboo topics we ignore to be accepted by our group."},
+  {t:"Fahrenheit 52",s:"Fahrenheit 52",p:"jul22",u:"https://f52.charlieharrington.com/",n:"This is a super cool writing challenge Charlie Harrington (software engineer at Cruise) gave himself for 2022. Inspired by Ray Bradbury's advice, Charlie is writing one short story a week. He is also reading and releasing them as podcasts if you prefer that. This project is right up my alley as a huge fan of Ray Bradbury, science fiction, writing in general, and challenges in consistency.",b:1},
+  {t:"Why The Doomsayers Are Wrong (with Tyler Cowen)",s:"Uncomfortable Conversations with Josh Szeps",p:"aug22",u:"https://shows.acast.com/uncomfortable-conversations-with-josh-szeps/episodes/why-the-doomsayers-are-wrong-with-tyler-cowen",n:"Fun interview with Tyler Cowen on: how to identify talent, what makes someone talented, has \"wokeness\" peaked, why most people overestimate how bad things are, and more."},
+  {t:"Lost in Borges' Garden",s:"Very Bad Wizards",p:"aug22",u:"https://www.verybadwizards.com/145",n:"I've been on a Borges binge all year so I decided to revisit the suite of Borges episodes covered on the Very Bad Wizards podcast. Here Tamler and Dave discuss the intricate genius of Borges' The Garden of Forking Paths. I highly recommend you read Borges, listen to this episode, and check out their other Borges episodes (particularly their episode on Tlön, Uqbar, Orbis Tertius)"},
+  {t:"Tlön, Uqbar, Orbis Tertius",s:"Very Bad Wizards",p:"aug22",u:"https://www.verybadwizards.com/154",n:"I highly recommend you read Borges, listen to this episode, and check out their other Borges episodes (particularly their episode on Tlön, Uqbar, Orbis Tertius)",b:1},
+  {t:"Andrew Callaghan",s:"Yeah But Still",p:"aug22",u:"https://podcasts.apple.com/us/podcast/episode-348-all-breaks-no-gas-feat-andrew-callaghan/id1304627947",n:"Andrew is the genius behind Channel 5 (and previously All Gas No Brakes), a gonzo journalism outfit in the era of YouTube and content abundance. Andrew travels the country with his team (two best friends of his) and documents some of the strangest (yet important and often under-reported) cultural and political moments happening today. Basically think of any crazy shit that went down recently, and it is highly likely that Andrew was there filming and talking with people."},
+  {t:"Stephen King",s:"The Kingcast",p:"aug22",u:"https://podcasts.apple.com/us/podcast/a-conversation-with-stephen-king/id1512844649",n:"I’ve been on a Stephen King kick this year. I read It, 11/22/63, and The Shining back to back to back. It was particularly cool to see Jake Epping, the main character from 11/22/63, run into two members of “the losers club” when traveling back in time to 1958 Derry, Maine. Anyway, after finishing The Shining (on Father’s day no less) I felt a little burnt out on King (no pun intended). But then I found this podcast entirely dedicated to the work and worlds of Stephen King. It is delightful."},
+  {t:"Joyce Carol Oates",s:"The Tim Ferriss Show",p:"sep22",u:"https://tim.blog/2021/02/10/joyce-carol-oates/",n:"I've been devouring writer interviews lately. Watching George Saunders, Margaret Atwood, Stephen King, Neil Gaiman, Joe Hill, and now Joyce Carol Oates speak about their process and writers they admire. I revisited this particular interview in September, and it really is a gem for any creative."},
+  {t:"Stephen King",s:"The Kingcast",p:"oct22",u:"https://podcasts.apple.com/us/podcast/a-conversation-with-stephen-king/id1512844649",n:"The Kingcast is a podcast I discovered this year, exclusively dedicated to the work of Stephen King. They typically invite a guest on to discuss a specific piece in the King canon and also have more general conversations about horror and King’s work. In this episode, the Kingcast crew got to interview the man himself. They discuss his long career, adaptations, and horror as a genre."},
+  {t:"Joe Hill",s:"Eli Roth's History of Horror Uncut",p:"oct22",u:"https://podcasts.apple.com/us/podcast/joe-hill/id1453080639",n:"This is a delightful interview with the author Joe Hill. This one covers horror in both writing and film. Eli Roth is the director / writer of Hostel and many other horror films. And Joe Hill is the son of Stephen King, and a fantastic writer."},
+  {t:"Scott Derrickson + C. Robert Cargill",s:"Post Mortem with Mick Garris",p:"oct22",u:"https://podcasts.apple.com/gb/podcast/scott-derrickson-c-robert-cargill/id1204949508",n:"Rounding out the trio of podcast recommendations is this wonderful conversation with the director and writers of the new Blumhouse adaptation of Joe Hill's The Black Phone. You also know Scott's or Cargill's work if you've seen The Exorcism of Emily Rose, Sinister, or Doctor Strange."},
+  {t:"Very Bad Wizards on 2001: A Space Odyssey, With Sam Harris",s:"Very Bad Wizards",p:"nov22",u:"https://podcasts.apple.com/ca/podcast/very-bad-wizards/id557975157",n:"A good discussion on Kubrick, art in general, and of course AI and the misalignment problem."},
+  {t:"Neil Gaiman",s:"David Tennant Does a Podcast With…",p:"nov22",u:"https://podcasts.apple.com/gb/podcast/neil-gaiman/id1450005207",n:"Never knew David Tennant had a podcast. Neil Gaiman is great here as always."},
+  {t:"Jacob Collier",s:"Broken Record",p:"nov22",u:"https://www.pushkin.fm/podcasts/broken-record/jacob-collier-part-1",n:"Anyone who loves music or makes music has probably heard of the insanely talented Jacob Collier. I really enjoy Jacob’s ability to covey and explain the sometimes complex ideas he enjoys exploring in his music and the music of others. He is one of those people who gets you excited simply by how excited he is by the things he does."},
+  {t:"Amjad Masad on AGI",s:"Moment of Zen",p:"jan23",n:"This is a new podcast I've been dropping in on. They have ~4,000 subscribers on YouTube currently, but this will get much bigger. Every so often you find a new well of novel ideas or framings of old ideas. This podcast has proven to be one of these wells. I recommend starting with their convo with Amjad Masad (founder of Replit) about Artificial General Intelligence and the part two debate style episode here."},
+  {t:"Ted Gioia",s:"Conversations with Tyler",p:"jan23",u:"https://conversationswithtyler.com/episodes/ted-gioia/",n:"Ted is like a kind of expert map maker of culture. You won't necessarily find the latest fads on his map (though you do see them occasionally on there) but Ted knows the history and momentum of culture like nobody else I've encountered online. He is best known as a music critic I guess, but his writing transcends that designation frequently. This episode is a great introduction into Ted's ideas."},
+  {t:"Katherine Rundell",s:"Conversations with Tyler",p:"jan23",u:"https://conversationswithtyler.com/episodes/katherine-rundell/",n:"Katherine Rundell walks on roofs around the world and writes children's books that aim to inspire that wonderful joy of discovery that if we were lucky, warmed our childhoods. This episode had me smiling the entire time. I particularly liked Katherine's thoughts on trying to remind adults that the best parts of being a kid are still available to us, even as we grow older."},
+  {t:"Roland Griffiths (#641)",s:"The Tim Ferriss Show",p:"jan23",u:"https://podcasts.apple.com/us/podcast/641-roland-griffiths-ph-d-lifes-ultimate-glide-path/id863897795",n:"In this episode Tim talks to his friend Roland Griffiths, prominent Johns Hopkins researcher on the behavioral and subjective effects of mood-altering drugs. Roland recently received a stage IV cancer diagnosis and he and Tim discuss how he has been able to approach his own death with gratitude and mindfulness."},
+  {t:"Wade Davis (#652)",s:"The Tim Ferriss Show",p:"feb23",u:"https://podcasts.apple.com/us/podcast/652-famed-explorer-wade-davis-how-to-become-the/id863897795",n:"This Indiana Jones type figure was the first person to bring the infamous Haitian “zombie poison” into the US. This is a wonderful conversation about Wade’s countless adventures, demystifying “zombies” and Voodoo, living your best life, writing well, and optimism."},
+  {t:"Professor John Vervaeke (#657)",s:"The Tim Ferriss Show",p:"feb23",u:"https://podcasts.apple.com/us/podcast/657-professor-john-vervaeke-on-cultivating-wisdom-finding/id863897795",n:"This episode felt like I was plopped into a strange world with different rules than my own, and John was my tour guide. A fascinating exploration of flow states and the four ways of knowing. Recommend checking out John’s Twitter and YouTube series."},
+  {t:"Derek Sivers",s:"The Pathless Path",p:"feb23",u:"https://castbox.fm/app/castbox/player/id2013435",n:"Derek has lived many lives from a musician to a startup founder. Like David Bowie, Derek believes in transformation as a means of evolution and personal growth. He is sincere and wise and here he explores the social scripts that set him on his life’s path and the joy of travel. The Pathless Path is a podcast I recently discovered and so far each episode I’ve checked out has been a hit. The Pathless Path, is a related concept to what I am getting at with the idea of “polymathematics”."},
+  {t:"Young Bill Gates (#290)",s:"Founders",p:"feb23",u:"https://www.listennotes.com/podcasts/founders/290-young-bill-gates-and-the-Ao4wGUtL32c/",n:"Listen for a very well executed and detailed overview of Bill Gates’ childhood tinkering and the eventual start of Microsoft. Many lessons in here, delivered in an entertaining manner."},
+  {t:"Tim Urban",s:"Uncomfortable Conversations with Josh Szeps",p:"feb23",u:"https://podcasts.apple.com/us/podcast/wait-but-why-with-tim-urban/id1002920114",n:"Tim Urban runs one of my favorite blogs Wait But Why? and is insanely good at framing complex ideas in simple and oftentimes hilarious ways. He uses minimalist doodles to illustrate these ideas. He just finished his first book What’s Our Problem? A self-help book for societies, which explores what has gone wrong in our society recently. In this episode, Josh and Tim explore some of the ideas in Tim’s new book."},
+  {t:"Paul Buchheit",s:"The Social Radars",p:"mar23",u:"https://podcasts.apple.com/us/podcast/paul-buchheit-creator-of-gmail/id1677066062",n:"Jessica Livingston and Carolynn Levy have both funded and advised thousands of companies. They recently launched a new podcast where they talk to some of the most successful founders about how they did it. I recommend starting with the Paul Buchheit episode!"},
+  {t:"Lenny Rachitsky (Ep 39)",s:"Aarthi & Sriram's Good Time Show",p:"mar23",u:"https://podcasts.apple.com/us/podcast/ep-39-how-lenny-rachitskys-%24500k-year-newsletter-became/id1624345213",n:"I’ve been a huge fan of Aarthi and Sriram’s podcast for a few weeks now. They are married so their chemistry is awesome and they have casual conversations with some of the smartest folks working in technology today. Their recent conversation with Lenny Rachitsky about how to grow a community through writing online and other content creation is a good one to start with!"},
+  {t:"Sam Altman",s:"Lex Fridman Podcast",p:"mar23",n:"Listen to these two podcasts for uncomplicated discussions with the two cofounders of the company leading the AI / Large Language Model revolution, OpenAI. Sam Altman is the CEO and the conversation with Lex is more high level and focused on social impact. Ilya is the Chief of Science of OpenAI and has a slightly more technical conversation with Dwarkesh."},
+  {t:"Ilya Sutskever",s:"Dwarkesh Podcast (The Lunar Society)",p:"mar23",n:"Listen to these two podcasts for uncomplicated discussions with the two cofounders of the company leading the AI / Large Language Model revolution, OpenAI. Sam Altman is the CEO and the conversation with Lex is more high level and focused on social impact. Ilya is the Chief of Science of OpenAI and has a slightly more technical conversation with Dwarkesh."},
+  {t:"Nat Friedman",s:"Dwarkesh Podcast (The Lunar Society)",p:"mar23",n:"Two episode recs in one roundup, you know Dwarkesh is doing something right. This conversation is fascinating and immersed me immediately. Nat, who was the CEO of GitHub (within Microsoft), has partnered with Dr. Brent Seales to launch the Vesuvius Challenge: a million dollar prize for reading an unopened Herculaneum scroll for the very first time using AI and computer vision. Hundreds of ancient scrolls were buried in ash and mud and crumble at the slightest touch."},
+  {t:"Sci-fi master Ted Chiang on AI, time travel and more",s:"Fiction Science",p:"mar23",u:"https://podcasts.apple.com/us/podcast/sci-fi-master-ted-chiang-on-ai-time-travel-and-more/id1528078321",n:"Ted Chiang is a genius. You may have experienced a version of his work if you’ve seen the movie Arrival. If you haven’t seen that movie yet you have to watch it today… and Ted’s story is the basis for it. I am currently reading his second collection of short stories Exhalation and it is blowing my mind."},
+  {t:"Derek Sivers",s:"The Tim Ferriss Show",p:"apr23",n:"The first that I recommend is his latest conversation with Derek Sivers. Derek is such a gem. I recommended his appearance on The Pathless Path in February's roundup too. In this one, it seems like Tim traveled to visit Derek in New Zealand, and they record a wonderful conversation they had together there. It feels common and intimate, while still being aimed at bringing value to the listeners. I particularly like Derek's advice on becoming technologically independent (a path I feel myself heading down as I rebuild my site from scratch)."},
+  {t:"Kevin Kelly",s:"The Tim Ferriss Show",p:"apr23",n:"The second episode worth listening to is Tim's latest episode with Kevin Kelly. Kevin has been making the rounds so to speak and I've enjoyed each of his recent conversations. But he and Tim have a fun vibe given that they have become friends, so Kevin feels very open in this one. They discuss many topics but I particularly like listening to Kevin's advice on creating traditions within a family and how to stop aiming to be \"the best\" and instead aiming to be \"the only.\""},
+  {t:"James Dyson: Against the Odds! (#300)",s:"Founders",p:"apr23",u:"https://podcasts.apple.com/us/podcast/300-james-dyson-against-the-odds/id1141877104",n:"I told Tessa recently that I don't understand how the Founders podcast works so well. A single host reads biographies and autobiographies and then goes through the highlights and lessons via audio. It shouldn't work, but it does. It might be because of what James Dyson realized about the secret ingredient for success being difference. By simply being different than your competition you can succeed."},
+  {t:"Stephen Wolfram",s:"Aarthi & Sriram's Good Time Show",p:"apr23",n:"Two fantastic interviews with Stephen Wolfram dropped recently, and in one of them I got to ask Stephen a question! The first episode with Stephen Wolfram I'd recommend is his recent appearance on Aarthi & Sriram's Good Time Show. This is a wonderful exploration of Wolfram's perspective on learning, mastery, and building a career based on having ideas. The best part is Aarthi and Sriram are genuine fans of Wolfram and his work."},
+  {t:"Stephen Wolfram",s:"This Week in Startups",p:"apr23",n:"The second episode with Wolfram I'd recommend is his appearance on This Week in Startups with Jason Calacanis. This one is great, specifically for hearing Wolfram recount the history and current state of AI research. Wolfram is a true inventor and investigator of curiosity. He is a great model to learn from, and I certainly have."},
+  {t:"James Dyson",s:"How I Built This",p:"apr23",u:"https://wondery.com/shows/how-i-built-this/episode/10386-dyson-james-dyson/",n:"If you dig this episode, you will probably love the James Dyson episode of How I Built This, where you can hear some of these stories (and more) from Dyson himself.",b:1},
+  {t:"Beyond Comfort: Derek Sivers (#135)",s:"The Pathless Path",p:"apr23",u:"https://podcasts.apple.com/us/podcast/135-beyond-comfort-derek-sivers-on-why-great-musicians/id1328600107",n:"I recommended his appearance on The Pathless Path in February's roundup too.",b:1},
+  {t:"Paul Graham",s:"The Social Radars",p:"may23",u:"https://podcasts.apple.com/fi/podcast/paul-graham-co-founder-of-viaweb-and-y-combinator/id1677066062",n:"Paul has been such an influential voice to so many people trying to build things the world might want. His essays are consistently cited as a huge source of inspiration by people I admire, and I myself have found them extremely valuable (and recommended several in these Roundups). In this episode, Paul talks with his wife Jessica and Carolynn Levy about how he got started building things people want."},
+  {t:"Kevin Kelly on Advice, Travel and Tech",s:"Conversations with Tyler",p:"may23",u:"https://conversationswithtyler.com/episodes/kevin-kelly/",n:"As always, Tyler Cowen is able to take this conversation with a very known and very interesting person into new deeper waters."},
+  {t:"Tim Ferriss",s:"The Colin & Samir Show",p:"sum23",n:"Some great insight on fame, podcasting, collecting good questions, and playing the long game."},
+  {t:"How I Built The Tim Ferriss Show to 700+ Million Downloads",s:"The Tim Ferriss Show",p:"sum23",n:"Some great insight on fame, podcasting, collecting good questions, and playing the long game."},
+  {t:"Christopher Nolan (#313)",s:"Founders",p:"sum23",u:"https://podcasts.apple.com/us/podcast/313-christopher-nolan/id1141877104",n:"After Tessa and I caught an Interstellar showing at the Alamo and then Oppenheimer, I was ready for some more Nolan content. David (host of Founders) nailed it again with this awesome episode detailing Nolan’s film school days and how he leveraged early success to do things his way."},
+  {t:"Paul Simon",s:"Broken Record",p:"sum23",n:"A great check in with a legend. Malcolm Gladwell and Paul Simon talk critics, songwriting, and more."},
+  {t:"Andy Matuschak",s:"Dwarkesh Podcast (The Lunar Society)",p:"sum23",n:"Not sure how but I am just now exploring Andy’s work. Andy is great on topics like self-teaching, memory and spaced repetition, building products and experiments, tools for thought, and the future of reading. One example of his work is a new kind of book that is designed to help you master the material within it more effectively."},
+  {t:"David Eagleman",s:"The Tim Ferriss Show",p:"sum23",u:"https://tim.blog/2023/05/27/david-eagleman/",n:"I was cleaning the house while listening to this episode having already written this roundup post. I had to come back and add this episode. David blew my mind. He is a neuroscientist who is launching innovative products to expand our senses, from a vibrating wrist band that allows deaf people to hear to Infrared vision that lets you see how long a car has been parked. Listen to this!"},
+  {t:"Derek Thompson",s:"How I Write",p:"aug23",u:"https://podcasts.apple.com/us/podcast/derek-thompson-from-acting-to-the-eminem/id1700171470",n:"A fantastic discussion about how ideas for new writing happen, how they are refined, and how Derek approaches writing on the internet."},
+  {t:"Andy Matuschak on Books and Learning",s:"EconTalk",p:"aug23",u:"https://www.econtalk.org/andy-matuschak-on-books-and-learning/",n:"A wonderful discussion on new paradigms for education. Not sure if I’ve already recommended this piece by Andy (recommended below), but you should definitely read it!"},
+  {t:"Paul Rony (Ep 04)",s:"Sane New World",p:"fal23",u:"https://podcasts.apple.com/au/podcast/ep-04-paul-rony-on-innovation-creativity-and-personal/id1694293838",n:"This is a podcast I discovered after finding out about the startup Sane who is building “an integrated web for ideas”. One of their founders, Ida, hosts this wonderful podcast chatting with digital innovators about how we can make software more interesting. I’d check out the episode with Paul Rony first! Oh, and they’re hiring if you are a vibey programmer looking for a cool company."},
+  {t:"Frank Chimero",s:"On Margins",p:"fal23",u:"https://craigmod.com/onmargins/002/",n:"I recently recommended Craig Mod’s brilliant podcast, On Margins, in one of my “paid only” Weekender posts. I’ve since binged most of the available episodes and loved every single one to such an extent that I feel required to share On Margins again outside of the paywall. This podcast explores print, graphic design, bookmaking and writing, and building your own career path / life. I recommend starting with the Frank Chimero episode."},
+  {t:"Lenny Rachitsky",s:"How I Write",p:"fal23",u:"https://podcasts.apple.com/us/podcast/lenny-rachitsky-how-this-ex-airbnb-product-manager/id1700171470",n:"Check this one out to hear how Lenny stumbled into one of the most popular Substacks on the platform. This conversation pairs well with the practical how to guide Lenny put out after reaching 500,000 Substack readers."},
+  {t:"Ada Palmer",s:"Conversations with Tyler",p:"fal23",u:"https://conversationswithtyler.com/episodes/ada-palmer/",n:"On Viking Metaphysics, Contingent Moments, and Censorship. Ada Palmer is the author of an acclaimed four-volume series of science fiction novels, a tenured historian at the University of Chicago in the history department where she studies the Renaissance, the Enlightenment, radical free thought, the history of censorship, and information revolutions."},
+  {t:"Stephen Jennings",s:"Conversations with Tyler",p:"fal23",u:"https://conversationswithtyler.com/episodes/stephen-jennings/",n:"Stephen heads up Rendeavour, an urban development company who is inventing a new city in Kenya on an old coffee farm. Meet Tatu City in this wonderful conversation on how to build a city."},
+  {t:"Priority Bicycles, Dave Weiner",s:"How I Built This",p:"nov23",u:"https://podcasts.apple.com/mx/podcast/priority-bicycles-dave-weiner/id1150510297",n:"Dave Weiner is a programmer who is obsessed with biking. He went on to invent a new kind of bike, that doesn’t need to be maintained. Listen to this for a great peek behind the curtain of manufacturing hardgoods, launching crowdsourced projects, and more."},
+  {t:"Dean Phillips",s:"All-In Podcast",p:"nov23",n:"Dean Phillips is a former congressman running against Biden in the Democratic Primary race. I was super impressed with his balanced thinking on complex issues where other Presidential Hopefuls (Vivek, RFK, etc) fall into the trap of exaggeration and the vice of virality."},
+  {t:"Patrick and John Collison",s:"The Social Radars",p:"nov23",u:"https://podcasts.apple.com/us/podcast/the-social-radars/id1677066062",n:"Patrick is on the “smartest people I know” list of many of the smartest people I know. Patrick and his brother John co-founded Stripe and are clearly focused on doing much more. Delightful recap of the founding of Stripe, Patrick and John meeting Paul G as teens, and more."},
+  {t:"A Life of Lyrics",s:"McCartney: A Life in Lyrics",p:"jan24",u:"https://podcasts.apple.com/us/podcast/mccartney-a-life-in-lyrics/id1697193110",n:"Any Beatles fan will have a field day listening to the countless episodes breaking down familiar and new stories of Fab Four lore."},
+  {t:"DHH (Ep 71)",s:"Aarthi & Sriram's Good Time Show",p:"jan24",u:"https://www.aarthiandsriram.com/p/ep-71-dhh-on-craft-winning-le-mans",n:"The iconoclastic inventor of Ruby on Rails and 37Signals reflects on his career and future."},
+  {t:"How to Discover Your Own Taste",s:"The Ezra Klein Show",p:"jan24",u:"https://www.nytimes.com/2024/01/09/opinion/ezra-klein-podcast-kyle-chayka.html",n:"Taste is becoming increasingly important. This episode explores how to form your own taste and increase your variance."},
+  {t:"Chris Beresford-Hill (#715)",s:"The Tim Ferriss Show",p:"jan24",u:"https://podcasts.apple.com/us/podcast/715-chris-beresford-hill-a-master-ad-man-on/id863897795",n:"A masterclass on advertisements and doing your best work."},
+  {t:"Patrick McKenzie",s:"Conversations with Tyler",p:"jan24",u:"https://conversationswithtyler.com/episodes/patrick-mckenzie/",n:"A fun niche conversation with one of my favorite internet writers."},
+  {t:"Paul Giamatti",s:"WTF with Marc Maron",p:"jan24",u:"https://www.wtfpod.com/podcast/episode-1500-paul-giamatti",n:"Go see The Holdovers. Listen to this too. Paul is great."},
+  {t:"Jack Antonoff",s:"Zane Lowe",p:"fm24",n:"A very open conversation about creativity, spaces, and life in general."},
+  {t:"Hugh Howey (#726)",s:"The Tim Ferriss Show",p:"fm24",u:"https://podcasts.apple.com/us/podcast/726-hugh-howey-bestselling-author-of-wool-and/id863897795",n:"Author of Silo - recommended for anyone interested in writing, especially if you are curious about self-publishing and other novel approaches to publishing your work."},
+  {t:"Claire Hughes Johnson (#724)",s:"The Tim Ferriss Show",p:"fm24",u:"https://podcasts.apple.com/us/podcast/724-claire-hughes-johnson-building-stripe-from-160/id863897795",n:"Recommended for people looking to do great work with a team, especially leaders on their teams."},
+  {t:"Seth Godin (#728)",s:"The Tim Ferriss Show",p:"fm24",u:"https://podcasts.apple.com/us/podcast/728-seth-godin-coaching-tim-on-overcoming-resistance/id863897795",n:"Prolific blogger + marketing whiz - recommended for internet writers and those weaving together ideas in any domain."},
+  {t:"Soman Chainani (#720)",s:"The Tim Ferriss Show",p:"fm24",u:"https://podcasts.apple.com/us/podcast/720-life-lessons-from-taylor-swift-conquering-anxiety/id863897795",n:"Fiction author and amateur comedian - this was a truly delightful conversation that feels like dropping in on a private chat between great friends. They try a new style of interview where they prep 9 note cards ahead of time and tackle them one by one."},
+  {t:"Jacob Collier",s:"The Colin & Samir Show",p:"fm24",n:"Dispelling the myth of the savant and discussing the creativity maze of pulling ideas into reality."},
+  {t:"Patrick Collison",s:"Dwarkesh Podcast (The Lunar Society)",p:"fm24",u:"https://www.dwarkeshpatel.com/p/patrick-collison",n:"Everyone ought to know about what Patrick is up to."},
+  {t:"Alex Komoroske (Ep 208)",s:"Infinite Loops",p:"fm24",u:"https://www.infiniteloopspodcast.com/alex-komoroske-complex-adaptivity-all-the-way-down-ep-208/",n:"A mind expanding conversation about systems thinking."},
+  {t:"Jimmy Soni (Ep 214)",s:"Infinite Loops",p:"apr24",u:"https://www.infiniteloopspodcast.com/jimmy-soni-the-courage-of-creative-risk-ep214/",n:"An entertaining conversation on the state of book publishing and the room for improvement. Pairs well with a recommendation I made last month where Tim Ferriss and Hugh Howey (Silo) discuss new ideas for authors."},
+  {t:"Coleman Hughes",s:"Conversations with Tyler",p:"apr24",u:"https://conversationswithtyler.com/episodes/coleman-hughes/",n:"Thoughts on jazz, race, color blindness, and more."},
+  {t:"Alex Garland (Civil War)",s:"Script Apart",p:"apr24",u:"https://www.scriptapart.com/episodes/alex-garland-civil-war-interview",n:"Alex Garland is the writer / director of Civil War (as well as Annihilation, 28 days later, etc). We recently saw Civil War and like others, were majorly surprised by the cinematic quality and overall handling of the subject throughout the film. I think the surprise came because of the way the movie was marketed and I somehow missed who made it before the night of. Like I tend to do, after seeing it, I sought out conversations with the creator behind the film and have enjoyed hearing Alex talk about writing, subtlety in modern moviemaking, and in some ways… the politics of today."},
+  {t:"Alex Garland on Civil War, A24 and taking risks",s:"Script Apart",p:"apr24",u:"https://podcasts.apple.com/us/podcast/alex-garland-civil-war-interview-a24-taking-risks-28/id1332842638",n:"I strongly recommend seeing Civil War in theaters and if you’re looking for a good podcast with Alex to start, recommend this one and this one.",b:1},
+  {t:"The Power of Super Communication with Charles Duhigg",s:"This Week in Startups",p:"apr24",u:"https://thisweekinstartups.com/episodes/yaIkwHqfVaq",n:"Pairing this with the fantastic Claire Hughes Johnson episode of the Tim Ferriss show and thinking about improving my communication skills, especially as I am recording episodes for my upcoming podcast!"},
+  {t:"Twitter’s former Head of Product Opens Up, Kayvon Beykpour",s:"Lenny's Podcast",p:"apr24",u:"https://podcasts.apple.com/us/podcast/twitters-former-head-of-product-opens-up-being-fired/id1627920305",n:"Some Twitter tea and practical advice for building a team that actually gets things done."},
+  {t:"Nate Silver",s:"Tetragrammaton",p:"sum24",n:"What I expected to be a straightforward interview about political forecasting actually ended up being a fascinating introduction to the tactics and psychology of poker. Rick demonstrates the key skills of a good interviewer in my view, curiosity and naiveté."},
+  {t:"Ezra Koenig",s:"Tetragrammaton",p:"sum24",n:"A two part conversation with Ezra that goes very deep on how he writes songs, makes demos, thinks about albums and what it means to be in a band, his relationship with fans and audiences, and tons of music history. If you make music, you will be grinning ear to ear while taking notes."},
+  {t:"Paul Bloom",s:"Conversations with Tyler",p:"sum24",u:"https://conversationswithtyler.com/episodes/paul-bloom/",n:"“Do babies have a concept of good and evil?”, “would you kill 10 dogs to save a human?”, “would Tarzan be a polytheist?“, “was the rude customer service rep actually an AI agent?”"},
+  {t:"Addicted to Distraction - Ted Gioia",s:"How I Write",p:"sum24",u:"https://open.spotify.com/episode/7cTNmXQOARi26jYCTAJsCZ",n:"Ted is in top form here, weaving his personal history with his criticisms of much of modern media (and culture at large). He talks about how he only read books published before the 20th century until he was forty, how he learns new things, and his advice to young creative people trying to make sense of things. This is but one example of why Ted’s blog is one of the few I pay for at the moment."},
+  {t:"Mark Groden - The Future of Flying",s:"Invest Like the Best",p:"sum24",u:"https://open.spotify.com/episode/3rSj3jtbyrAwakAy2LJ6lS",n:"Mark and his company Skyryse aim to make small aircraft as safe as commercial flights (the safest mode of transportation in human history). This is an awesome introduction to how airplanes and their safety systems work plus a fascinating glimpse of the future from someone helping build it."},
+  {t:"Kelsey Piper - Reporting on tech",s:"Complex Systems",p:"sum24",u:"https://www.complexsystemspodcast.com/episodes/reporting-tech-kelsey-piper/",n:"Let’s unpack the absolute chaos of the media over the last half decade or so and discuss the older models of how the press and corporations interacted. This is a great episode of Patrick McKenzie’s (patio11) new podcast, which is the conversation based version of his wonderful blog posts. I also recommend checking out his episode on betting markets and teaching trading to high schoolers."},
+  {t:"Prediction markets (Stephen Grugett)",s:"Complex Systems",p:"sum24",u:"https://www.complexsystemspodcast.com/episodes/prediction-markets-stephen-grugett/",n:"I also recommend checking out his episode on betting markets and teaching trading to high schoolers.",b:1},
+  {t:"Teaching trading to high schoolers (Ricki Heicklen)",s:"Complex Systems",p:"sum24",u:"https://www.complexsystemspodcast.com/episodes/teaching-trading-ricki-heicklen/",n:"I also recommend checking out his episode on betting markets and teaching trading to high schoolers.",b:1},
+  {t:"Bill Wurtz",s:"HTML Energy",p:"sum24",u:"https://html.energy/bill.html",n:"Anyone who makes things for a living will thoroughly enjoy this conversation with the creative force known as Bill Wurtz. Just go poking around Bill’s site if you’re not convinced. This episode is like a manual to “escaping the deserted island” of doing work you don’t enjoy for a living."},
+  {t:"Graham Duncan",s:"Invest Like the Best",p:"jan25",u:"https://joincolossus.com/episode/graham-duncan-talent-whisperer/",n:"A recent one I enjoyed where about 70% of the concepts discussed wired new neuron pathways and the other 30% felt like a foreign language to me. Strong worldview held with a “loose grip”. Particularly Graham’s ideas about “source” were fascinating to me."},
+  {t:"How an Anonymous Researcher Predicted AI's Trajectory",s:"Dwarkesh Podcast (The Lunar Society)",p:"jan25",u:"https://www.dwarkeshpatel.com/p/gwern-branwen/",n:"Dwarkesh continues to excel, but the interview with Gwern really stood out of the recent batch of interviews from him. Gwern has that charming quality of being a world within himself (themselves?) and this interview lets you into that world, introducing new patterns of thought and approaches to work."},
+  {t:"Scripts for difficult conversations",s:"Lenny's Podcast",p:"jan25",u:"https://www.lennysnewsletter.com/p/scripts-for-difficult-conversations-alisa-cohn/",n:"Tactical and prescriptive conversation with Alisa Cohn about how to have difficult conversations and give constructive feedback at work."},
+  {t:"Kurt Vile Interview",s:"Aquarium Drunkard Transmissions",p:"jan25",u:"https://aquariumdrunkard.com/2022/05/04/kurt-vile-transmissions/",n:"Kurt seems to approach his music with that perfect balance of seriousness and playfulness. Been binging Aquarium Drunkard interviews lately, feels like a cozy radio show of a bygone era."},
+  {t:"Jeff Tweedy",s:"Reverb",p:"jan25",n:"Jeff is always a great conversationalist but something about this Reverb interview feels so light and casual, full of humor and off the cuff. Really enjoyed it, complete with the off camera looks and side convos."}
+];
+const READ = [
+  {t:"Learning at Scale: An interview with Stewart Brand",s:"Stewart Brand",k:"Interview",p:"may22",u:"https://theprepared.org/features-feed/how-buildings-learn",n:"It is no secret that I am a huge fan of Stewart Brand (creator of Whole Earth Catalog and author of How Buildings Learn, among a lifetime of other amazing projects). This is a wonderful brief interview from The Prepared."},
+  {t:"The Path to Better Thinking Through Puzzles and Riddles",s:"A.J. Jacobs",k:"Essay",p:"may22",u:"https://tim.blog/2022/04/25/how-to-solve-problems/",n:"This is an excerpt from A.J. Jacobs’ new book “The Puzzler: One Man’s Quest to Solve the Most Baffling Puzzles Ever, from Crosswords to Jigsaws to the Meaning of Life”. In this excerpt, Jacobs discusses the playfulness of puzzles and how introducing them into your life can improve your thinking in all areas."},
+  {t:"103 Bits of Advice I Wish I Had Known",s:"Kevin Kelly",k:"Essay",p:"may22",u:"https://kk.org/thetechnium/103-bits-of-advice-i-wish-i-had-known/",n:"Kevin Kelly (founder and “Senior Maverick” of Wired Mag and author of Vanishing Asia) recently turned 70 years old. To mark the occasion, he shared a list of 103 bits of advice that is packed with golden insights. Here are a few of my favorites, but I don’t want to spoil the list so go read them!"},
+  {t:"Why the Children of Immigrants Are the Ones Getting Ahead in America",s:"Ran Abramitzky and Leah Boustan",k:"Essay",p:"jun22",u:"https://time.com/6182715/immigrants-children-us-mobility/",n:"The set up: children born to immigrants outperform children born to non-immigrant parents on measures of social mobility (income compared to their parents) within the US. The insight: this may be because immigrants are more likely to move to areas of high opportunity within the US, while children born to non-immigrant parents are more likely to stay put. When comparing the two groups in high opportunity cities within the US, the difference was diminished."},
+  {t:"The Bitter Lesson",s:"Rich Sutton",k:"Essay",p:"jun22",u:"http://www.incompleteideas.net/IncIdeas/BitterLesson.html",n:"For those interested in AI development, this short read is great. It argues that trying to get computers to \"think\" like we do always loses to approaches that leverage computational power. For example, instead of trying to get a computer to understand the game of chess in a human way, Deep Mind was able to defeat Garry Kasparov (world champion at the time of their match) by leveraging deep search. Injecting knowledge into AIs (like knowledge of Chess) does not improve with computational power."},
+  {t:"The Mysterious Disappearance of a Revolutionary Mathematician",s:"Rivka Galchen",k:"Essay",p:"jun22",u:"https://www.newyorker.com/magazine/2022/05/16/the-mysterious-disappearance-of-a-revolutionary-mathematician",n:"The tale of Alexander Grothendieck, an eccentric mathematician who revolutionized the field with his novel approach to viewing mathematics and problem solving. This New Yorker piece feels almost like a Borges' short story (and even includes a society of intellectuals publishing under a pseudonym and sending out wedding invites for their make believe person's daughter), but the very fact that it is true makes it all the better."},
+  {t:"Parenting decisions: don't trust your gut",s:"The Atlantic",k:"Essay",p:"jun22",u:"https://www.theatlantic.com/ideas/archive/2022/05/parenting-decisions-dont-trust-your-gut-book-excerpt/629734/",n:"This harmonized with another article I read last month, that argued that where you raise your kids has the highest impact on how they turn out.",b:1},
+  {t:"Walking the Cotswolds, Walking Japan",s:"Craig Mod",k:"Essay",p:"jul22",u:"https://craigmod.com/ridgeline/143/",n:"This is a gorgeous write-up on a group of friends' walking party and a meditation on the emotion of living spaces. Craig and some friends (including Kevin Kelly, founder of Wired mag) planned a trip to walk together in England, Hobbit-style, talking about a new topic each day and strolling from town to town, inn to inn. This essay is beautiful and calming."},
+  {t:"Truth vs Trust",s:"Kevin Kelly",k:"Essay",p:"jul22",u:"https://kk.org/thetechnium/truth-vs-trust/",n:"A good short presentation on how we might find truth in the digital age of information abundance using a ledger like system built around trustworthiness."},
+  {t:"The Year We All Became Reactionaries",s:"Noah Smith",k:"Essay",p:"jul22",u:"https://noahpinion.substack.com/p/the-year-we-all-became-reactionaries",n:"A good summary of the politics of Liberals throughout the pandemic years, and what we might face in the coming years of a conservative backlash."},
+  {t:"The Chairman of the Board",s:"Joe Posnanski",k:"Essay",p:"jul22",u:"https://joeposnanski.substack.com/p/the-chairman-of-the-board",n:"A beautiful and intimate essay about Chess, family, getting older, and staying young."},
+  {t:"Where did the Long Tail Go?",s:"Ted Gioia",k:"Essay",p:"jul22",u:"https://tedgioia.substack.com/p/where-did-the-long-tail-go",n:"This is a fascinating post on a topic I have been thinking more and more about lately: where did all the cool shit go? Of course whenever we contemplate this, we must be on guard against the glaze of nostalgia and romanticization. And yet it does seem to be true that coffee shops, architecture, popular music, brands and corporate logos, movies and art, technology and UI, restaurants and bars, and much more are sliding into sameness."},
+  {t:"My New Old Apple IIe Computer",s:"Charlie Harrington",k:"Essay",p:"jul22",u:"https://www.charlieharrington.com/my-new-old-apple-iie-computer/",n:"This is for anyone interested in hardware, consumer tech, the Apple mythos, design, and hacking / DIY. You will absolutely love Charlie's documentation of finding an old Apple IIe in a neighbor's trash and getting it up and running again."},
+  {t:"14 Warning Signs That You Are Living in a Society Without a Counterculture",s:"Ted Gioia",k:"Essay",p:"jul22",u:"https://tedgioia.substack.com/p/14-warning-signs-that-you-are-living",n:"Ted has a few posts and tweets on these ideas, and after Tessa pointed this out to me I haven't stopped spotting examples of it.",b:1},
+  {t:"No, America is Not Collapsing",s:"Noah Smith",k:"Essay",p:"aug22",u:"https://noahpinion.substack.com/p/no-america-is-not-collapsing",n:"One of the best things you can do for your sanity is to find smart optimists and read their work. Even if you are naturally disposed to be pessimistic, try this. So much doomerism today, so find sources that directly challenge it, if only to encounter the Steelmen."},
+  {t:"THE MAINTENANCE RACE",s:"Stewart Brand",k:"Essay",p:"aug22",u:"https://www.worksinprogress.co/issue/the-maintenance-race/",n:"This is a public draft of a chapter from an upcoming book Stewart Brand is writing (presumably all about maintenance). This chapter tells the epic story of the race around the globe, by nine solo sailors in 1968. I had never heard these harrowing stories about Bernard Moitessier, Robin Knox-Johnston, or Donald Crowhurst's time at sea. Here, Stewart Brand tells the captivating story of their race, focusing on their different approaches to maintaining their vessels while at sea."},
+  {t:"June Huh, High School Dropout, Wins the Fields Medal",s:"Jordana Cepelewicz",k:"Essay",p:"aug22",u:"https://www.quantamagazine.org/june-huh-high-school-dropout-wins-the-fields-medal-20220705/",n:"The story of the poet turned mathematician and how his unique (and slow) approach to solving forty year old mysteries in geometry and patterns won him the highest prize in all of math."},
+  {t:"10 Reasons Why I'm Publishing My Next Book on Substack",s:"Ted Gioia",k:"Essay",p:"sep22",u:"https://tedgioia.substack.com/p/10-reasons-why-im-publishing-my-next",n:"Great article on Ted's Substack about the shortcomings of traditional publishing, from the perspective of someone who has gone that route before. Ted’s upcoming book about the origins of musicology, ‘Music to Raise the Dead’, looks fascinating."},
+  {t:"Where Are You Going? Where Have You Been?",s:"Joyce Carol Oates",k:"Story",p:"sep22",u:"https://www.cusd200.org/cms/lib/IL01001538/Centricity/Domain/361/oates_going.pdf",n:"A somber and wicked short story with two extremely vivid characters."},
+  {t:"Salman Rushdie and the Power of Words",s:"Adam Gopnik",k:"Essay",p:"sep22",u:"https://www.newyorker.com/news/daily-comment/salman-rushdie-and-the-power-of-words",n:"Bravo to Adam Gopnik for this piece."},
+  {t:"The Specialist's Hat",s:"Kelly Link",k:"Story",p:"oct22",u:"https://kellylink.net/specialists-hat",n:"A creeping short story full of eerie details that create a clear spooky mood. The story involves the archetypical haunted house and a pair of \"sensitive\" sisters who experience things not easily explained. I loved this story because it played with the reader's expectations of horror, and leaves the right questions unanswered, which allows your imagination to fill in the blanks. After I finished this one, I immediately wanted to try and write my own version of it."},
+  {t:"The Lottery",s:"Shirley Jackson",k:"Story",p:"oct22",u:"https://www.newyorker.com/magazine/1948/06/26/the-lottery",n:"A classic short story that slowly reveals itself. When you reach the end, it's too late. Shirley Jackson is the author of the novel The Haunting of Hill House, the basis of the fantastic Netflix adaptation many people may have seen. Hook: Once a year, every year, the whole town gathers for the drawing of the lottery. Winning this one might not be so good though."},
+  {t:"Best New Horror",s:"Joe Hill",k:"Story",p:"oct22",u:"https://www.amazon.com/Best-New-Horror-Century-Ghosts/dp/B000XE3XRU",n:"This story opens Hill's collection of stories Twentieth Century Ghosts. It is delightfully meta but more importantly, truly creepy. It has that eerie quality some Borges stories have, where you feel while reading it that you are a part of it. I just found out that Scott Derrickson, who directed the recent adaptation of The Black Phone, has also optioned this story for the screen."},
+  {t:"The Garden of Forking Paths",s:"Jorge Luis Borges",k:"Story",p:"oct22",u:"https://archive.org/stream/TheGardenOfForkingPathsJorgeLuisBorges1941/The-Garden-of-Forking-Paths-Jorge-Luis-Borges-1941_djvu.txt",n:"A classic Borges story that rewards rereading. This one isn't horror exactly, but the mood it creates means it belongs here. Think dark, rainy, and World War I. I just learned that it was his first story translated into English. Hook: A spy attempts to communicate to Germany the essential information he has uncovered about the location of an upcoming airstrike."},
+  {t:"The Reaper's Image",s:"Stephen King",k:"Story",p:"oct22",u:"https://www.scaretissue.com/wp-content/uploads/2014/09/The-Reapers-Image-Stephen-King.pdf",n:"This is pleasantly quaint knowing what Stephen King went on to write, but that is what makes it so fun. This early-career short story is full of cob-web imagery and dusty attic spookiness. Hook: a collector of strange things seeks out a hundred-years-old mirror with a horrifying legend about it."},
+  {t:"The Ones Who Walk Away From Omelas",s:"Ursula K. Le Guin",k:"Story",p:"oct22",u:"https://learning.hccs.edu/faculty/emily.klotz/engl1302-6/readings/the-ones-who-walk-away-from-omelas-ursula-le-guin/view",n:"While not strictly horror, the ideas behind this classic short story are quite unsettling. What are we willing to ignore in order to personally flourish? This story imagines an extreme answer to that question. I am reminded of Margaret Atwood's observation that within every Dystopia is a small Utopia, and within every Utopia is a small Dystopia. Hook: Welcome to the city of Omelas, a seemingly genuine Utopia with a terrible secret its citizens are made aware of on their eighteenth birthday."},
+  {t:"The Black Phone",s:"Joe Hill",k:"Story",p:"oct22",u:"https://havenner.weebly.com/uploads/2/0/5/7/20575006/theblackphone.pdf",n:"This short story is the source material for the latest film starring Ethan Hawke in the role of \"the grabber\". If you haven't seen that yet, definitely check it out this month. The short story is smaller in scope than the film, but packs a memorable punch of realistic terror. Hook: A part time clown named Al is kidnapping young boys. In his basement where he takes them, there is an antique black phone, long since disconnected."},
+  {t:"An Epic AI Debate",s:"Gary Marcus",k:"Essay",p:"jan23",u:"https://garymarcus.substack.com/p/an-epic-ai-debateand-why-everyone"},
+  {t:"Wikenigma, an Encyclopedia of Unknowns",s:"Wikenigma",k:"Site",p:"jan23",u:"https://wikenigma.org.uk/start",n:"Wikipedia for current mysteries and unsolved problems, ranging from Physics to History."},
+  {t:"Are you serious?",s:"Visakan Veerasamy",k:"Essay",p:"feb23",u:"https://visakanv.substack.com/p/are-you-serious",n:"So… are you actually serious?"},
+  {t:"The Perils of Niching Down",s:"Rob Hardy",k:"Essay",p:"feb23",u:"https://www.ungatedcreative.com/p/the-perils-of-niching-down",n:"This essay explores many of the ideas behind this blog’s name, polymathematics. Highly recommend it."},
+  {t:"No, Teen Suicide Isn’t Up Because Life Got Objectively Worse",s:"Eric Levitz",k:"Essay",p:"feb23",u:"https://nymag.com/intelligencer/2023/02/teen-suicide-depression-girls-social-media.html",n:"In the US, Teen Suicide and Teen Attempted Suicides have skyrocketed since the early 2010’s, particularly for young women. Why? Is it because of the rise in Social Media use? If so, then why don’t other nation’s with similar Social Media use see the same spikes in teen depression and suicide numbers? Is it that life is much harder today, that the economic situation for young adults is worse than in previous decades? Could it be the looming threat of climate change?"},
+  {t:"How an IBM Computer Learned to Sing (1961)",s:"Ted Gioia",k:"Essay",p:"mar23",u:"https://tedgioia.substack.com/p/how-an-ibm-computer-learned-to-sing",n:"This is the exact kind of essay I hope for when I sit down to read in the early morning of a Sunday with a fresh cup of coffee in my hand. Ted Gioia continually nails it."},
+  {t:"First Word Art / Last Word Art",s:"Michael Naimark",k:"Essay",p:"mar23",u:"http://www.naimark.net/writing/firstword.html",n:"I think I’ve recommended this before, but I find myself thinking about this 2001 essay a lot lately, given the pace of AI."},
+  {t:"Libraries Need More Freedom to Distribute Digital Books",s:"Dan Cohen for The Atlantic",k:"Essay",p:"apr23",u:"https://www.theatlantic.com/ideas/archive/2023/03/publishers-librarians-ebooks-hachette-v-internet-archive/673560/",n:"Read this to understand the furious struggle between the major publishers and libraries trying to provide access to the most readers possible and the reading their readers want most. This was all reignited during COVID when the Internet Archive (a project I’ve recommending investigating in a previous Roundup) began lending out Ebook copies of its archived content to help compensate for public libraries closing."},
+  {t:"Why Are Ebooks So Terrible?",s:"Ian Bogost for The Atlantic",k:"Essay",p:"apr23",u:"https://www.theatlantic.com/books/archive/2021/09/why-are-ebooks-so-terrible/620068/",n:"I am a huge fan of my Kindle and also intend to never stop buying physical books. This is a fascinating examination of the design limitations of Ebooks based on the physical form of books versus Ebooks, as well as the historical design elements omitted in modern reading devices. It is also just a great recap of the history of reading + reading tech. If you like thinking about the design of everyday things, you will love this quick read."},
+  {t:"readsomethingwonderful.com",s:"Matter",k:"Site",p:"may23",u:"http://readsomethingwonderful.com",n:"I’ve written about using Matter to save interesting essays and articles I want to read for later. It is my go to reading hub and designed very well. They’ve just released this delightful website where there are countless “timeless” reading recommendations available. This is their attempt to prevent the bias of reading exclusively new material that so many of us fall into. There are some fantastic essays in here. Some I have read and loved, but there are many more I have never even heard of."},
+  {t:"Brian Eno on the strange world of smells",s:"Brian Eno",k:"Interview",p:"may23",u:"http://music.hyperreal.org/artists/brian_eno/interviews/detail92.html",n:"Right now I am half-way through this one by Brian Eno about the strange world of smells.",b:1},
+  {t:"Don’t Call Yourself a Programmer",s:"Patrick McKenzie",k:"Essay",p:"sum23",u:"https://www.kalzumeus.com/2011/10/28/dont-call-yourself-a-programmer/",n:"I started following Patrick on Twitter last year but only recently started reading through his posts. This one was a very practical (and opinionated) exploration of how to succeed financially as a… programmer. It generalizes to getting hired for any role. I also really enjoyed this timely discussion he had with Ramit Sethi on getting your first freelance clients and what to charge."},
+  {t:"Ramit Sethi and Patrick McKenzie on getting your first consulting client",s:"Patrick McKenzie",k:"Essay",p:"sum23",u:"https://www.kalzumeus.com/2012/09/17/ramit-sethi-and-patrick-mckenzie-on-getting-your-first-consulting-client/",n:"I also really enjoyed this timely discussion he had with Ramit Sethi on getting your first freelance clients and what to charge.",b:1},
+  {t:"Ramit Sethi and Patrick McKenzie on why your customers would be happier if you charged more",s:"Patrick McKenzie",k:"Essay",p:"sum23",u:"https://www.kalzumeus.com/2012/09/21/ramit-sethi-and-patrick-mckenzie-on-why-your-customers-would-be-happier-if-you-charged-more/",n:"I also really enjoyed this timely discussion he had with Ramit Sethi on getting your first freelance clients and what to charge.",b:1},
+  {t:"How Hackers Invented Kiteboarding",s:"James Somers",k:"Essay",p:"sum23",u:"https://www.newyorker.com/tech/annals-of-technology/how-hackers-won-the-water",n:"James Somers was on my Coolest Folks I Discovered in 2022 list and his writing continues to wow me. Highly recommend this if you’re interested in design, invention, launching products, or software."},
+  {t:"How to do great work",s:"Paul Graham",k:"Essay",p:"sum23",u:"http://www.paulgraham.com/greatwork.html",n:"This essay deserves the intense praise it has been receiving since being published late last month. I emphatically recommend you read this if even the smallest part of you felt intrigued to know the answer to the question the title poses. This essay strings together many of the most valuable lessons Paul’s writing has taught me. After finishing it, my first impulse was to send it to everyone I love so that they too could gain the insights it presents."},
+  {t:"Specifying Spring ‘83",s:"Robin Sloan",k:"Essay",p:"sum23",u:"https://www.robinsloan.com/lab/specifying-spring-83/",n:"A fantastic overview of an alternative protocol to Twitter, email, and other timeline based social media protocols. This inspired (at least in part) Twilight, the project listed below and is welcome company with my continued thinking of how to make the internet cooler."},
+  {t:"My Writing Education: A Timeline",s:"George Saunders",k:"Essay",p:"aug23",u:"https://www.newyorker.com/books/page-turner/my-writing-education-a-timeline",n:"Holy moly. A beautiful piece of writing about the importance of great teachers."},
+  {t:"Why Books Don’t Work",s:"Andy Matuschak",k:"Essay",p:"aug23",u:"https://andymatuschak.org/books/",n:"Because of Printernet, I’ve been thinking a lot about how to make the reading experience the most enjoyable experience it can be. This has at times led me to think about making it more effective too. In these “notes” as Andy calls them, he brilliantly presents how information is obtained (or not obtained) through books and how we might innovate around this."},
+  {t:"What Screens Want",s:"Frank Chimero",k:"Essay",p:"aug23",u:"https://frankchimero.com/blog/2013/what-screens-want/",n:"This is a wonderful (and non-technical) survey of the “grain” of screens: flux."},
+  {t:"Always Bet On Text",s:"Graydon Hoare",k:"Essay",p:"aug23",u:"https://graydon2.dreamwidth.org/193447.html",n:"Another gem on how text is the eternal medium for human thought and culture."},
+  {t:"The Pastry A.I. That Learned to Fight Cancer",s:"James Somers",k:"Essay",p:"aug23",u:"https://www.newyorker.com/tech/annals-of-technology/the-pastry-ai-that-learned-to-fight-cancer",n:"In Japan, a group of market researchers realized that pastry shops make more money when they increase the variety of pastries they offer. The researchers also realized when pastries are not wrapped, but instead snuggled together in baskets, they appear fresher and sell better as a result. So this research group put their findings into practice and opened pastry shops all over Japan with 300+ pastries to choose from and no packaging."},
+  {t:"The Fierce Imagination of Haruki Murakami",s:"Sam Anderson",k:"Essay",p:"fal23",u:"https://www.nytimes.com/2011/10/23/magazine/the-fierce-imagination-of-haruki-murakami.html",n:"After watching a baseball game at 29, Murakami decided to write a book. His first book. He found himself stuck. So he began writing the first chapter in English and then translating it back into Japanese. The rest is history. This is a fascinating piece about how the world renowned writer is a sort of improvisational fusion of Japanese and Western pop culture, who could have only been created in the tiny sliver of time that was Western occupied post-war Japan."},
+  {t:"The Mind of John McPhee",s:"Sam Anderson",k:"Essay",p:"fal23",u:"https://www.nytimes.com/2017/09/28/magazine/the-mind-of-john-mcphee.html",n:"If you enjoy writing or reading (which I have to assume you do if you’ve found me here) you’ve got to check out Draft No. 4, John McPhee’s presentation of how he writes. This profile is a good introduction to how John McPhee can make the mundane (oranges, geology, a single tennis match) fascinating. That power is something I’ve been trying to harness in my own writing and life."},
+  {t:"Draft No. 4",s:"John McPhee",k:"Book",p:"fal23",u:"https://www.amazon.com/Draft-No-4-Writing-Process/dp/0374142742",n:"You’ve got to check out Draft No. 4, John McPhee’s presentation of how he writes.",b:1},
+  {t:"My 12 Favorite Problems",s:"The Honest Broker",k:"Essay",p:"fal23",u:"https://www.honest-broker.com/p/my-12-favorite-problems",n:"Ted shared this fantastic list of the 12 problems (or perhaps better put, questions) that have driven his work and thinking over his lifetime. They are all wonderful things to wonder about, but I especially loved number five: How do I avoid becoming a narrow specialist or a superficial generalist? Is there a third way? If so, how do I get there? That question is the driving question behind this blog and its name."},
+  {t:"Why Culture Has Come to a Standstill",s:"Jason Farago",k:"Essay",p:"fal23",u:"https://www.nytimes.com/2023/10/10/magazine/stale-culture.html",n:"There has been a wave of these kinds of essays lately. At least that is how it feels to me. But I always find them worth considering and searching for the counter-evidence to the idea that our culture has stopped progressing creatively. A lot of the work I am doing and the work others are doing that I admire, seems to be an attempt at making this idea untrue. In this piece, Jason does a great job of exploring the idea, mostly through his deep understanding of the history of art and revolutions."},
+  {t:"Open Letter in defense of innovation",s:"Carlos Pendas",k:"Essay",p:"nov23",u:"https://foamy-snowman-457.notion.site/Open-Letter-in-defense-of-innovation-72c66670a226469c877aa56cc6055f32",n:"If you read one thing this month, read this. Carlos is the founder of Meticulous Home, the brilliant inventors of the Meticulous Espresso Machine. Recently, a cowardly “competitor” filed a lawsuit against Carlos. […] This is one of the best things I've read in a while."},
+  {t:"How to Walk and Talk",s:"Craig Mod",k:"Essay",p:"nov23",u:"https://craigmod.com/ridgeline/043/",n:"Craig has started a tradition of gathering up interesting people and walking with them from town to town for 10 - 20 days. Here he gives a bit of behind the scenes on how to make this successful."},
+  {t:"Mr. Penumbra’s 24-Hour Bookstore",s:"Robin Sloan",k:"Book",p:"nov23",u:"https://www.amazon.com/Mr-Penumbras-24-Hour-Bookstore-Novel/dp/1250037751",n:"A magical blend of technology and art. And my copy glows in the dark, which I discovered on a late night trip for a glass of water. Longer essay on this coming soon."},
+  {t:"The Pathless Path",s:"Paul Millerd",k:"Book",p:"jan24",u:"https://think-boundless.com/",n:"Reflections on how to avoid rejecting your authentic self in favor of money and status."},
+  {t:"Zen in the Art of Writing",s:"Ray Bradbury",k:"Book",p:"fm24",u:"https://www.amazon.com/Zen-Art-Writing-Releasing-Creative/dp/0553296345",n:"A treasure for any aspiring dreamer, poet, writer, or artist."},
+  {t:"Gathering Structures",s:"Maggie Appleton",k:"Essay",p:"fm24",u:"https://maggieappleton.com/gathering-structures",n:"Tips on organizing a gathering."},
+  {t:"The map room is a physical room-size wiki for collaboration from the 1950s",s:"Matt Webb",k:"Essay",p:"fm24",u:"https://interconnected.org/home/2023/01/20/map_room"},
+  {t:"Long Distance Thinking",s:"Simon Sarris",k:"Essay",p:"fm24",u:"https://map.simonsarris.com/p/long-distance-thinking"},
+  {t:"Protocol Fiction, Desire, and Belief",s:"Matt Webb",k:"Essay",p:"apr24",u:"https://interconnected.org/home/2023/05/19/protocols",n:"This piece absolutely reoriented how I think about sharing things with the world, sparking change, introducing new ideas, etc. I interviewed Matt recently and was lucky enough to explore these ideas with him and how he thought about them while launching Poem/1, an AI powered clock which tells the time through poems."},
+  {t:"What I Worked On",s:"Paul Graham",k:"Essay",p:"apr24",u:"https://www.paulgraham.com/worked.html",n:"A Printernet reader put this in their recent issue and I absolutely loved it. A complete recounting of how Paul decided what to work on next, throughout his career."},
+  {t:"The Business of Wallets",s:"Patrick McKenzie (patio11)",k:"Essay",p:"apr24",u:"https://www.bitsaboutmoney.com/archive/the-business-of-wallets/",n:"Apple Wallet, Paypal, Venmo, Cash App… we are in an era of the digital wallet. In true Patrick fashion this piece gives a foundational understanding of how these businesses work and why they all eventually turn out the same."},
+  {t:"Modern Brazil: a very short introduction",s:"Anthony W. Pereira",k:"Book",p:"apr24",u:"https://www.amazon.com/Modern-Brazil-Short-Introduction-Introductions/dp/0198812086",n:"Read this on the flight to Rio last month and found it extremely compact and useful. It did a good job of not being too general while not getting lost in any one period of history. You may not have a reason to read about Brazil (go for it anyway!), but I guess the recommendation is to read about the place you are traveling to beforehand, because it certainly deepened my visit when I did."},
+  {t:"The secret to a good interview? Sit back and listen",s:"Decca Aitkenhead",k:"Essay",p:"apr24",u:"https://www.theguardian.com/global/2016/nov/26/decca-aitkenhead-similarities-interviews-conversations",n:"Short and sweet, humorous. Again, this fits in with Supercommunicators from Charles Duhigg."},
+  {t:"Supercommunicators",s:"Charles Duhigg",k:"Book",p:"apr24",u:"https://www.amazon.com/Supercommunicators-Unlock-Secret-Language-Connection/dp/0593243919",n:"Again, this fits in with Supercommunicators from Charles Duhigg.",b:1},
+  {t:"Untangling the Tale of Ada Lovelace",s:"Stephen Wolfram",k:"Essay",p:"sum24",u:"https://writings.stephenwolfram.com/2015/12/untangling-the-tale-of-ada-lovelace/",n:"A fascinating investigation into a deeply curious tinkerer woven with computer history, from a deeply curious tinkerer weaving the future of computer history. I read this after Tessa and I finished Bridgerton… so that may have helped."},
+  {t:"Always Already Programming",s:"Melanie Hoff",k:"Essay",p:"sum24",u:"https://gist.github.com/melaniehoff/95ca90df7ca47761dc3d3d58fead22d4",n:"Short and sweet meditation on the often blurry line between “users” and “programmers”."},
+  {t:"Sourdough",s:"Robin Sloan",k:"Book",p:"sum24",u:"https://www.amazon.com/Sourdough-Novel-Robin-Sloan/dp/0374203105",n:"Finally got to read and finish Sourdough, Robin Sloan’s second novel, in preparation for reading Moonbound (his third and latest). Sourdough was a bit of a slow start for me, but once I got into it I flew through the back half. If you liked Penumbra, imagine very similar vibes but for the weird world of food! It was fun to see the connections forming between the two worlds too as I’d heard Moonbound further expanded the lore. Started Moonbound at the beach last week and am enjoying it so far!"},
+  {t:"The New Yorker Who Cracked the U.K’s Premier Quiz Show",s:"David Segal (NYT)",k:"Essay",p:"sum24",u:"https://www.nytimes.com/2024/04/07/business/uk-university-challenge-brandon-blackwell.html",n:"The story about a young college student, Brandon, whose determination to be on (and win) the UK’s most exclusive televised collegiate quiz show sparked the assembly of the ideal four person team. The resulting strategy and practice regimen they took is a case study in deliberate practice and creative thinking."},
+  {t:"The Battle for Attention",s:"Nathan Heller",k:"Essay",p:"sum24",u:"https://www.newyorker.com/magazine/2024/05/06/the-battle-for-attention",n:"What starts out as a semi-familiar discussion on the science of attention, social media and marketing quickly turns weird. Read about the secret society of Ornithologists, professors and other weirdos who use their attention to elevate the neglected parts of public spaces. Very Borgesian at times."},
+  {t:"How to Write One Song",s:"Jeff Tweedy",k:"Book",p:"jan25",u:"https://www.bookpeople.com/how-write-one-song-loving-things-we-create-and-how-they-love-us-back-sale-copy",n:"This is a short little book about Jeff’s experience and advice on songwriting tips, written under the guise of explaining how to write your first song. But of course, this has tons of useful bits even if you’ve written hundreds. Tip I will pass on for other musicians: grab a random book off your bookshelf and flip through it absentmindedly until you spot a word that grabs your attention. This is a good way to find what new words might hold some reservoir of meaning for you."},
+  {t:"Torching the Modern Day Library of Alexandria",s:"James Somers",k:"Essay",p:"jan25",u:"https://www.theatlantic.com/technology/archive/2017/04/the-tragedy-of-google-books/523320/",n:"Great read from James Somers about the world we almost got, where any book ever written was available to anyone and the bureaucratic dealmaking between publishers and Google that prevented it."},
+  {t:"The Editors Protecting Wikipedia From AI Hoaxes",s:"Emanuel Maiberg",k:"Essay",p:"jan25",u:"https://www.404media.co/the-editors-protecting-wikipedia-from-ai-hoaxes/",n:"Pairs well with the above, giving a good overview of the modern spin on Wikipedia trolling threatening the trustworthiness of Wikipedia. Previews fascinating (and terrifying) possible futures that overlap with ideas like the Dead Internet Theory and even Kessler Syndrome… where we create an information ecosystem of half-truths, truths, and complete fiction—until we find ourselves trapped in an orbit of self-replicating misinformation, unable to free ourselves from a system we no longer trust."},
+  {t:"The Fierce Imagination of Haruki Murakami",s:"Sam Anderson",k:"Essay",p:"jan25",u:"https://www.nytimes.com/2011/10/23/magazine/the-fierce-imagination-of-haruki-murakami.html",n:"I am especially on the hunt for the best interviews or documentaries with writers. Here is a good one from Sam Anderson on Haruki Murakami and another on John McPhee.",b:1},
+  {t:"The Mind of John McPhee",s:"Sam Anderson",k:"Essay",p:"jan25",u:"https://www.nytimes.com/2017/09/28/magazine/the-mind-of-john-mcphee.html",n:"I am especially on the hunt for the best interviews or documentaries with writers. Here is a good one from Sam Anderson on Haruki Murakami and another on John McPhee.",b:1},
+  {t:"How I learned to read way way more",s:"John Paul Brammer",k:"Essay",p:"sum26",u:"https://johnpaulbrammer.substack.com/p/how-i-learned-to-read-way-way-more",n:"This fantastic essay from John Paul Brammer, How I learned to read way way more, resonates with how I’ve maintained healthy reading habits in a digital world. John discusses it poetically without becoming too abstract."},
+  {t:"10 rules for students and teachers",s:"John Cage",k:"Essay",p:"sum26",n:"Some things which stood out to me: consider everything an experiment, find someone wise or smart and follow them, the only rule is to work as work will always lead to something, separate the creative self from the editor self, enjoy yourself, read everything you can."},
+  {t:"Faith in eventually",s:"Jason Fried",k:"Essay",p:"sum26",u:"https://world.hey.com/jason/faith-in-eventually-2d17e90a",n:"An old gem I recently discovered from the designer Jason Fried about trusting that you’ll get there. On its face, this short blog post is about pursuing a new product or design, but of course, it’s really about trying to do anything meaningful and difficult."},
+  {t:"The attention crisis as a curiosity crisis",s:"—",k:"Essay",p:"sum26",n:"How the so-called “attention crisis” may be a “curiosity crisis”."}
+];
+
+/* ---------------- state ---------------- */
+let tab = "pod", mode = "a", showAlso = false, query = "";
+const list = document.getElementById("list");
+const countEl = document.getElementById("count");
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const data = () => tab === "pod" ? POD : READ;
+
+document.getElementById("tc-pod").textContent = POD.length;
+document.getElementById("tc-read").textContent = READ.length;
+
+function tallies(){
+  const D = data(), primary = D.filter(d=>!d.b);
+  const groups = {}; primary.forEach(d=>{groups[d.s]=(groups[d.s]||0)+1;});
+  const posts = new Set(D.map(d=>d.p)).size;
+  const cells = tab === "pod"
+    ? [[D.length,"episodes"],[Object.keys(groups).length,"shows"],[posts,"roundups"]]
+    : [[D.length,"pieces"],[Object.keys(groups).length,"writers"],[posts,"roundups"]];
+  document.getElementById("tallies").innerHTML = cells.map(([b,s])=>
+    '<div class="recs-tally"><b>'+esc(b)+'</b><span>'+esc(s)+'</span></div>').join("");
+}
+
+function matches(d){
+  if(!query) return true;
+  const hay = (d.t+" "+d.s+" "+(d.k||"")+" "+(d.n||"")+" "+P[d.p].n+" "+P[d.p].d).toLowerCase();
+  return query.toLowerCase().split(/\s+/).filter(Boolean).every(w=>hay.includes(w));
+}
+
+function rowHTML(d, i){
+  const post = P[d.p];
+  const title = d.u
+    ? '<a target="_blank" rel="noopener noreferrer" href="'+esc(d.u)+'">'+esc(d.t)+'</a>'
+    : esc(d.t);
+  const meta = mode === "a"
+    ? '<a target="_blank" rel="noopener noreferrer" href="'+esc(post.u)+'">'+esc(post.d)+'</a>'
+    : '<a target="_blank" rel="noopener noreferrer" href="'+esc(post.u)+'">'+esc(post.d)+'</a>';
+  const tags = [];
+  if(mode !== "a" && d.s && d.s !== "—") tags.push('<span class="rec-tag">'+esc(d.s)+'</span>');
+  if(d.k) tags.push('<span class="rec-tag">'+esc(d.k.toLowerCase())+'</span>');
+  if(d.b) tags.push('<span class="rec-tag">side mention</span>');
+  return '<li><div class="rec-entry'+(d.b?" rec-entry--aside":"")+'">'
+    + '<div class="rec-title">'+title+'</div>'
+    + '<div class="rec-note">'+esc(d.n||"")+'</div>'
+    + '<div class="rec-meta">'+meta+'</div>'
+    + (tags.length?'<div class="rec-tags">'+tags.join("")+'</div>':"")
+    + '</div></li>';
+}
+
+function render(){
+  const rows = data().filter(d=>(showAlso||!d.b) && matches(d));
+  const unit = tab==="pod" ? (rows.length===1?" episode":" episodes") : (rows.length===1?" piece":" pieces");
+  countEl.textContent = rows.length + unit;
+  if(!rows.length){ list.innerHTML = '<p class="recs-empty">Nothing matches that.</p>'; return; }
+
+  let html = "";
+  if(mode === "a"){
+    const groups = {};
+    rows.forEach(d=>{(groups[d.s]=groups[d.s]||[]).push(d);});
+    Object.entries(groups)
+      .sort((a,b)=> b[1].length-a[1].length || a[0].localeCompare(b[0]))
+      .forEach(([name,items])=>{
+        const u = tab==="pod" ? (items.length===1?" episode":" episodes") : (items.length===1?" piece":" pieces");
+        html += '<section class="rec-group"><h2>'+esc(name)
+             +  '<span class="rec-group-count">'+items.length+u+'</span></h2><ul class="rec-list">';
+        items.sort((a,b)=>ORDER.indexOf(a.p)-ORDER.indexOf(b.p));
+        items.forEach((d,i)=>{ html += rowHTML(d,i+1); });
+        html += '</ul></section>';
+      });
+  } else {
+    ORDER.forEach(key=>{
+      const items = rows.filter(d=>d.p===key);
+      if(!items.length) return;
+      const post = P[key];
+      html += '<section class="rec-group"><h2>'
+           +  '<a target="_blank" rel="noopener noreferrer" href="'+esc(post.u)+'">'+esc(post.n)+'</a>'
+           +  '<span class="rec-group-count">'+esc(post.d)+' &middot; '+items.length+'</span></h2><ul class="rec-list">';
+      items.forEach((d,i)=>{ html += rowHTML(d,i+1); });
+      html += '</ul></section>';
+    });
+  }
+  list.innerHTML = html;
+}
+
+/* ---------------- wiring ---------------- */
+const tabPod = document.getElementById("tab-pod");
+const tabRead = document.getElementById("tab-read");
+const byA = document.getElementById("by-a");
+const byPost = document.getElementById("by-post");
+const alsoBtn = document.getElementById("toggle-also");
+
+function syncButtons(){
+  tabPod.setAttribute("aria-selected", String(tab==="pod"));
+  tabRead.setAttribute("aria-selected", String(tab==="read"));
+  byA.textContent = tab==="pod" ? "by show" : "by writer";
+  byA.setAttribute("aria-pressed", String(mode==="a"));
+  byPost.setAttribute("aria-pressed", String(mode==="post"));
+  alsoBtn.setAttribute("aria-pressed", String(showAlso));
+}
+function save(){
+  try{
+    localStorage.setItem("jw-recs-tab", tab);
+    localStorage.setItem("jw-recs-mode", mode);
+    localStorage.setItem("jw-recs-also", showAlso?"1":"0");
+  }catch(e){}
+}
+function setTab(t){ tab = t; syncButtons(); tallies(); save(); render(); }
+function setMode(m){ mode = m; syncButtons(); save(); render(); }
+
+tabPod.addEventListener("click", ()=>setTab("pod"));
+tabRead.addEventListener("click", ()=>setTab("read"));
+byA.addEventListener("click", ()=>setMode("a"));
+byPost.addEventListener("click", ()=>setMode("post"));
+alsoBtn.addEventListener("click", ()=>{ showAlso = !showAlso; syncButtons(); save(); render(); });
+document.getElementById("q").addEventListener("input", e=>{ query = e.target.value; render(); });
+
+try{
+  const t = localStorage.getItem("jw-recs-tab"); if(t==="pod"||t==="read") tab = t;
+  const m = localStorage.getItem("jw-recs-mode"); if(m==="a"||m==="post") mode = m;
+  if(localStorage.getItem("jw-recs-also")==="1") showAlso = true;
+}catch(e){}
+syncButtons();
+tallies();
+render();
+  </script>
+</body>
+
+</html>
