@@ -1548,3 +1548,55 @@ body.essay {
     gap: 8px;
   }
 }
+
+/* the newest item in the home page work list. a soft blue light breathes behind
+   the text — same blue family as the shimmer squares, but as a blurred radial
+   wash rather than a gradient sweep, so it reads as a glow under the row and
+   never as a second block of colour.
+
+   the glow hangs off the anchor, not the li: the li is a full-width block, and
+   an ellipse centred in it would pool to the right of a short title instead of
+   sitting under the words. z-index 0 on the anchor opens a stacking context and
+   -1 on the pseudo-element drops the light behind the glyphs */
+.block.work li.work-new a {
+  position: relative;
+  z-index: 0;
+}
+
+.block.work li.work-new a::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  /* bleeds past the text box on every side so the falloff is never clipped
+     square */
+  inset: -11px -24px;
+  border-radius: 14px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(66, 165, 245, 0.85) 0%,
+    rgba(41, 97, 246, 0.5) 40%,
+    rgba(13, 71, 161, 0.18) 65%,
+    rgba(13, 71, 161, 0) 85%
+  );
+  /* the gradient already feathers its own edge; the blur is only here to take
+     the banding off it, so it stays small — at 8px the whole glow washed out
+     against the near-white page */
+  filter: blur(5px);
+  animation: work-new-pulse 6.5s ease-in-out infinite;
+}
+
+/* slow in, slow out: opacity carries the pulse and a slight scale keeps the
+   light from looking like a flat fade */
+@keyframes work-new-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.93); }
+  50%      { opacity: 1;   transform: scale(1.04); }
+}
+
+/* a pulsing light behind text is exactly the motion vestibular and
+   photosensitive users ask to be spared, so hold it at a steady mid glow */
+@media (prefers-reduced-motion: reduce) {
+  .block.work li.work-new a::before {
+    animation: none;
+    opacity: 0.6;
+  }
+}
