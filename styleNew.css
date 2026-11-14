@@ -823,6 +823,14 @@ body.membership {
   .tier {
     padding: 24px 20px 20px;
   }
+
+  /* four squares, not five. at 62px with a 9px gap the row needs 346px, and a
+     phone leaves roughly 300px inside the panel padding — so the fifth wraps
+     to a line of its own and reads as a stray rather than part of the set.
+     four come in at 275px and stay on one row down to a 360px screen */
+  .sq-e {
+    display: none;
+  }
 }
 
 /* Printernet green. taken from getprinternet.com, where it is the brand's own
