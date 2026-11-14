@@ -7,11 +7,11 @@
    transform. So what tumbles down the screen is the live text and the real
    photo, not a canvas drawing of them.
 
-   Sensors, not platforms: anything with a gyroscope participates (phones,
-   tablets, Windows convertibles). Apple Silicon Macs keep their accelerometer
+   Phones only. Tablets and convertibles carry the same gyroscope and pass
+   every feature test a phone would, so the gate is the screen's short side
+   rather than a capability check. Apple Silicon Macs keep their accelerometer
    behind the undocumented SPU with no public framework access, so no browser
-   can read it there and the effect simply never arms. That is a hardware
-   fact, not a branch in this file — see spill()/restore() for manual testing. */
+   can read it there regardless — see spill()/restore() for manual testing. */
 (function () {
   'use strict';
 
@@ -253,37 +253,43 @@
     window.addEventListener('deviceorientation', onOrientation, false);
   }
 
-  /* iOS needs requestPermission, and it only counts inside a real user
-     gesture — so this cannot arm itself on load. everywhere else the listener
-     just attaches and stays silent until hardware reports something */
+  /* phones only, and no feature test can tell a phone from a tablet -- both
+     carry the same gyroscope. the screen's short side is the honest signal:
+     it does not change when the device rotates, where a width media query
+     would, since a phone in landscape is around 844px wide and would read as
+     a tablet. phones sit at 360-430, the smallest tablets at 600+ */
+  function isPhone() {
+    var s = window.screen || {};
+    var shortSide = Math.min(s.width || 9999, s.height || 9999);
+    return shortSide <= 500 && window.matchMedia('(pointer: coarse)').matches;
+  }
+
   function arm() {
     var DOE = window.DeviceOrientationEvent;
     if (!DOE) return;
+    if (!isPhone()) return;
 
-    if (typeof DOE.requestPermission === 'function') {
-      addPrompt(function () {
-        DOE.requestPermission().then(function (res) {
-          if (res === 'granted') listen();
-        }).catch(function () {});
-      });
-    } else {
+    if (typeof DOE.requestPermission !== 'function') {
+      /* android delivers orientation events unasked */
       listen();
+      return;
     }
-  }
 
-  function addPrompt(onGrant) {
-    var header = document.querySelector('.site-header');
-    if (!header) return;
+    /* iOS hands over nothing until requestPermission resolves granted, and
+       that call is only honoured inside a user gesture. with no button to
+       press, the first touch anywhere on the page has to be the gesture --
+       so the system dialog arrives unannounced, and a decline cannot be
+       retried without a reload. that is the cost of having no affordance */
+    var ask = function () {
+      document.removeEventListener('touchend', ask);
+      document.removeEventListener('click', ask);
+      DOE.requestPermission().then(function (res) {
+        if (res === 'granted') listen();
+      }).catch(function () {});
+    };
 
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'tilt-permit';
-    btn.textContent = 'tilt me';
-    btn.addEventListener('click', function () {
-      btn.remove();
-      onGrant();
-    });
-    header.appendChild(btn);
+    document.addEventListener('touchend', ask, { passive: true });
+    document.addEventListener('click', ask);
   }
 
   /* Apple Silicon Macs cannot tilt at all, so leave a way in from the
