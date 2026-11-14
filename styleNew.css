@@ -1600,3 +1600,38 @@ body.essay {
     opacity: 0.6;
   }
 }
+
+/* tilt-spill: contents come loose and slide to the low side. the elements are
+   pinned to their measured rects by JS, so all this layer does is keep stray
+   scrollbars away and style the iOS permission affordance */
+
+body.is-spilled {
+  overflow: hidden;
+}
+
+.tilt-permit {
+  display: none;
+  flex-shrink: 0;
+  border: 1px solid #111;
+  background: transparent;
+  padding: 7px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1;
+  color: #0b0b0b;
+  cursor: pointer;
+}
+
+/* only ever shown on devices whose sensors need a gesture to unlock, and the
+   button is injected by JS — so on a desktop it is never in the DOM at all */
+@media (hover: none) and (pointer: coarse) {
+  .tilt-permit {
+    display: inline-flex;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tilt-permit {
+    display: none;
+  }
+}
