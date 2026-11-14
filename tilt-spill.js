@@ -77,6 +77,13 @@
   var TREMBLE_PX = 4;
   var TREMBLE_RAD = 0.012;
 
+  /* below this much agitation nothing moves at all. one fast flick of the
+     cursor scores 0.27 and two casual reversals 0.44 -- both ordinary
+     browsing, and both used to show a visible shiver. the tremble now only
+     exists once a shake is genuinely under way, so the page is untouched the
+     rest of the time */
+  var TREMBLE_GATE = 0.5;
+
   /* once shaken apart, the pile sits for a beat and then reassembles itself --
      there is no "un-shake" the way un-tilting a phone puts things back */
   var DWELL_MS = 2200;
@@ -133,7 +140,8 @@
         /* its own shiver frequency and phase, so the page does not buzz as one
            sheet -- around 9Hz, give or take a third */
         tf: 0.058 * vary(i + 31, 0.3),
-        tp: i * 1.7
+        tp: i * 1.7,
+        marked: false
       });
     }
 
@@ -141,6 +149,9 @@
   }
 
   function write(p, jx, jy, jr) {
+    /* every path that writes a transform marks the element, so springStep
+       knows there is one to strip once the piece comes to rest */
+    p.marked = true;
     p.el.style.transform =
       'translate3d(' + (p.x + (jx || 0)).toFixed(2) + 'px,' +
       (p.y + (jy || 0)).toFixed(2) + 'px,0) rotate(' +
@@ -158,6 +169,11 @@
     var lean = shaking ? 0 : Math.max(-1, Math.min(1, t.roll / LEAN_REF));
     var sag = shaking ? 0 : Math.max(0, Math.min(1, Math.abs(t.pitch) / 90));
     var ag = state.agitation;
+    /* remapped so the shiver starts from nothing at the gate rather than
+       appearing already part-grown */
+    var amp = ag > TREMBLE_GATE
+      ? Math.min(1, (ag - TREMBLE_GATE) / (1 - TREMBLE_GATE))
+      : 0;
     var moving = 0;
 
     for (var i = 0; i < state.pieces.length; i++) {
@@ -176,15 +192,28 @@
       p.r += p.vr * DT;
 
       var jx = 0, jy = 0, jr = 0;
-      if (ag > 0.002) {
-        var amp = ag * p.drift;
-        jx = Math.sin(now * p.tf + p.tp) * TREMBLE_PX * amp;
-        jy = Math.cos(now * p.tf * 1.3 + p.tp) * TREMBLE_PX * 0.6 * amp;
-        jr = Math.sin(now * p.tf * 0.8 + p.tp) * TREMBLE_RAD * amp;
+      if (amp > 0) {
+        var a = amp * p.drift;
+        jx = Math.sin(now * p.tf + p.tp) * TREMBLE_PX * a;
+        jy = Math.cos(now * p.tf * 1.3 + p.tp) * TREMBLE_PX * 0.6 * a;
+        jr = Math.sin(now * p.tf * 0.8 + p.tp) * TREMBLE_RAD * a;
       }
 
       moving = Math.max(moving, Math.abs(p.vx), Math.abs(p.vy), Math.abs(tx - p.x));
-      write(p, jx, jy, jr);
+
+      /* strip the transform rather than writing an identity one. translate3d
+         promotes the element to its own compositing layer, which rasterises
+         text differently -- leaving one on would mean the page never quite
+         looks untouched even when nothing is moving */
+      if (!jx && !jy && !jr &&
+          Math.abs(p.x) < 0.01 && Math.abs(p.y) < 0.01 && Math.abs(p.r) < 0.0005) {
+        if (p.marked) {
+          p.el.style.transform = '';
+          p.marked = false;
+        }
+      } else {
+        write(p, jx, jy, jr);
+      }
     }
 
     if (ag > 0) state.agitation = ag > 0.002 ? ag * DECAY : 0;
