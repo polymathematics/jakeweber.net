@@ -1,6 +1,12 @@
-/* tilt-spill — the page's contents answer the tilt of the phone continuously,
-   drifting toward the low side as it leans and coming fully loose past a
-   threshold, where they slide down and pile against the bottom corner.
+/* tilt-spill — the page's contents come loose and pile up, driven by whatever
+   the device can actually sense.
+
+   On a phone that is tilt: the pieces drift toward the low side as it leans
+   and let go past a threshold. A laptop has no readable accelerometer, so
+   there the trigger is shaking the cursor — the same gesture macOS uses to
+   find a lost pointer. Shaking has no steady direction to lean toward, so the
+   continuous build-up is a tremble instead: the harder you shake, the more the
+   type shivers, until it comes apart.
 
    Two regimes share one loop. Under the threshold every piece is pulled by its
    own spring toward an offset derived from the tilt; past it, matter.js takes
@@ -54,6 +60,27 @@
      multiply and removes essentially all of it */
   var SMOOTH = 0.12;
 
+  /* a shake is read as direction reversals of the cursor. each qualifying one
+     bumps "agitation", which decays every frame -- so sustained shaking
+     accumulates while a single flick fades. tuned so a vigorous shake fires in
+     about 0.6s and a deliberate one in 1.5s, while one flick peaks at 0.27 and
+     two casual reversals at 0.44, both well under the 1.0 trigger */
+  var BUMP = 0.27;
+  var DECAY = 0.985;
+  var AGITATION_MAX = 2;
+  var MIN_SPEED = 550;   /* px/sec at the turn */
+  var MIN_TRAVEL = 25;   /* px since the last turn, so a jittery hand is not a shake */
+
+  /* the tremble rides on top of the springs rather than through them: at ~9Hz
+     it is far above their 1.5Hz natural frequency, so routing it through the
+     spring would simply filter it away */
+  var TREMBLE_PX = 4;
+  var TREMBLE_RAD = 0.012;
+
+  /* once shaken apart, the pile sits for a beat and then reassembles itself --
+     there is no "un-shake" the way un-tilting a phone puts things back */
+  var DWELL_MS = 2200;
+
   var DT = 1 / 60;
   var SETTLE_FRAMES = 30;
 
@@ -68,7 +95,10 @@
     tilt: { roll: 0, pitch: 0 },   /* smoothed, degrees from the held baseline */
     baseBeta: null,
     baseGamma: null,
-    still: 0
+    still: 0,
+    source: 'tilt',                /* tilt | shake */
+    agitation: 0,
+    spillAt: 0
   };
 
   /* --- the pieces ------------------------------------------------------ */
@@ -99,25 +129,35 @@
            heading does, so it swings further and slower */
         drift: vary(i, 0.35),
         stiff: 90 * vary(i + 7, 0.22),
-        damp: 13 * vary(i + 19, 0.16)
+        damp: 13 * vary(i + 19, 0.16),
+        /* its own shiver frequency and phase, so the page does not buzz as one
+           sheet -- around 9Hz, give or take a third */
+        tf: 0.058 * vary(i + 31, 0.3),
+        tp: i * 1.7
       });
     }
 
     return pieces;
   }
 
-  function write(p) {
+  function write(p, jx, jy, jr) {
     p.el.style.transform =
-      'translate3d(' + p.x.toFixed(2) + 'px,' + p.y.toFixed(2) + 'px,0) rotate(' +
-      p.r.toFixed(4) + 'rad)';
+      'translate3d(' + (p.x + (jx || 0)).toFixed(2) + 'px,' +
+      (p.y + (jy || 0)).toFixed(2) + 'px,0) rotate(' +
+      (p.r + (jr || 0)).toFixed(4) + 'rad)';
   }
 
   /* --- the loop -------------------------------------------------------- */
 
-  function springStep() {
+  function springStep(now) {
+    var shaking = state.source === 'shake';
     var t = state.tilt;
-    var lean = Math.max(-1, Math.min(1, t.roll / LEAN_REF));
-    var sag = Math.max(0, Math.min(1, Math.abs(t.pitch) / 90));
+
+    /* a shake has no steady direction, so there is nothing to lean toward --
+       the springs rest at zero and the whole build-up is the tremble */
+    var lean = shaking ? 0 : Math.max(-1, Math.min(1, t.roll / LEAN_REF));
+    var sag = shaking ? 0 : Math.max(0, Math.min(1, Math.abs(t.pitch) / 90));
+    var ag = state.agitation;
     var moving = 0;
 
     for (var i = 0; i < state.pieces.length; i++) {
@@ -135,13 +175,23 @@
       p.y += p.vy * DT;
       p.r += p.vr * DT;
 
+      var jx = 0, jy = 0, jr = 0;
+      if (ag > 0.002) {
+        var amp = ag * p.drift;
+        jx = Math.sin(now * p.tf + p.tp) * TREMBLE_PX * amp;
+        jy = Math.cos(now * p.tf * 1.3 + p.tp) * TREMBLE_PX * 0.6 * amp;
+        jr = Math.sin(now * p.tf * 0.8 + p.tp) * TREMBLE_RAD * amp;
+      }
+
       moving = Math.max(moving, Math.abs(p.vx), Math.abs(p.vy), Math.abs(tx - p.x));
-      write(p);
+      write(p, jx, jy, jr);
     }
 
+    if (ag > 0) state.agitation = ag > 0.002 ? ag * DECAY : 0;
+
     /* nothing is moving and nothing wants to: stop burning frames until the
-       next orientation event disturbs it */
-    if (moving < 0.05) {
+       next shake or orientation event disturbs it */
+    if (moving < 0.05 && state.agitation === 0) {
       if (++state.still > SETTLE_FRAMES) return false;
     } else {
       state.still = 0;
@@ -155,11 +205,21 @@
     if (!engine) return true;
 
     var t = state.tilt;
-    var lean = Math.max(-1, Math.min(1, t.roll / 50));
-    engine.gravity.x = lean * 1.9;
-    /* never let gravity point up the screen: things slide to the low side,
-       they do not float */
-    engine.gravity.y = Math.max(0.35, 1 - Math.abs(t.pitch) / 160);
+    if (state.source === 'shake') {
+      /* nothing to lean toward: it simply falls, and the sideways scatter came
+         from the impulse each piece was given at the moment it let go */
+      engine.gravity.x = 0;
+      engine.gravity.y = 1;
+      if (state.agitation > 0) {
+        state.agitation = state.agitation > 0.002 ? state.agitation * DECAY : 0;
+      }
+    } else {
+      var lean = Math.max(-1, Math.min(1, t.roll / 50));
+      engine.gravity.x = lean * 1.9;
+      /* never let gravity point up the screen: things slide to the low side,
+         they do not float */
+      engine.gravity.y = Math.max(0.35, 1 - Math.abs(t.pitch) / 160);
+    }
 
     Matter.Engine.update(engine, 1000 / 60);
 
@@ -176,7 +236,20 @@
   }
 
   function tick() {
-    var alive = state.mode === 'spilled' ? physicsStep() : springStep();
+    var now = (window.performance && performance.now) ? performance.now() : Date.now();
+
+    /* no "un-shake" exists the way un-tilting a phone puts things back, so the
+       pile waits out a beat of calm and then reassembles on its own */
+    /* restore() flips the mode to calm and the springs below pick the pieces
+       up in the same frame. it must not return here: restore()'s own run() is
+       a no-op while this loop is already running, so returning would schedule
+       no next frame and leave everything frozen mid-fall */
+    if (state.mode === 'spilled' && state.source === 'shake' &&
+        now - state.spillAt > DWELL_MS && state.agitation < 0.2) {
+      restore();
+    }
+
+    var alive = state.mode === 'spilled' ? physicsStep() : springStep(now);
 
     if (!alive) {
       state.running = false;
@@ -223,7 +296,7 @@
     p.el.style.willChange = 'transform';
   }
 
-  function spill() {
+  function spill(impulse) {
     if (state.mode === 'spilled' || reduceMotion.matches) return;
     if (typeof Matter === 'undefined') return;
     if (!state.pieces.length) state.pieces = collect();
@@ -249,6 +322,17 @@
 
     for (var i = 0; i < state.pieces.length; i++) {
       var p = state.pieces[i];
+
+      /* the scrolling panels can hold list items well outside the viewport.
+         those still tremble happily in flow, but giving one a body would pin
+         it at a nonsense offscreen rect and rain it in from nowhere */
+      var seen = p.el.getBoundingClientRect();
+      if (seen.bottom < 0 || seen.top > window.innerHeight ||
+          seen.right < 0 || seen.left > window.innerWidth) {
+        p.body = null;
+        continue;
+      }
+
       pin(p);
 
       var body = Bodies.rectangle(p.originX + p.x, p.originY + p.y, p.w, p.h, {
@@ -264,8 +348,13 @@
       /* carry the spring's momentum across. matter measures velocity per
          step, the springs in px per second — without the divide every piece
          would be flung sixty times too hard at the moment of release */
-      Matter.Body.setVelocity(body, { x: p.vx * DT, y: p.vy * DT });
-      Matter.Body.setAngularVelocity(body, p.vr * DT);
+      /* the springs' own momentum, plus whatever the cursor was doing at the
+         instant it broke -- that kick is what makes a shake scatter the type
+         sideways instead of just dropping it */
+      var kx = impulse ? impulse.x * p.drift : 0;
+      var ky = impulse ? impulse.y * p.drift : 0;
+      Matter.Body.setVelocity(body, { x: p.vx * DT + kx, y: p.vy * DT + ky });
+      Matter.Body.setAngularVelocity(body, p.vr * DT + (impulse ? impulse.x * 0.004 : 0));
 
       p.body = body;
       Composite.add(engine.world, body);
@@ -275,6 +364,7 @@
 
     state.engine = engine;
     state.mode = 'spilled';
+    state.spillAt = (window.performance && performance.now) ? performance.now() : Date.now();
     document.body.classList.add('is-spilled');
     run();
   }
@@ -298,8 +388,14 @@
         p.body = null;
       }
 
-      if (p.prevStyle === null || p.prevStyle === undefined) p.el.removeAttribute('style');
-      else p.el.setAttribute('style', p.prevStyle);
+      /* only pieces that were actually pinned have a saved style to put back.
+         calling removeAttribute on the others would strip an inline style this
+         script never set */
+      if (p.prevStyle !== undefined) {
+        if (p.prevStyle === null) p.el.removeAttribute('style');
+        else p.el.setAttribute('style', p.prevStyle);
+        p.prevStyle = undefined;
+      }
 
       write(p);
     }
@@ -311,6 +407,7 @@
     }
 
     state.mode = 'calm';
+    state.agitation = 0;
     document.body.classList.remove('is-spilled');
     run();
   }
@@ -368,10 +465,83 @@
     return shortSide <= 500 && window.matchMedia('(pointer: coarse)').matches;
   }
 
+  /* --- shake input (laptops and desktops) ------------------------------ */
+
+  /* a laptop has no accelerometer a browser can read -- Apple Silicon Macs
+     keep theirs behind the undocumented SPU -- so the gesture stands in for
+     the sensor. Shaking the cursor is already a thing people do on macOS to
+     find a lost pointer, which makes it discoverable by accident and needs no
+     button, no permission and no instructions */
+  var ptr = { x: 0, y: 0, t: 0, dir: 0, run: 0, peak: 0, vx: 0, vy: 0, has: false };
+
+  function onMove(e) {
+    var now = (window.performance && performance.now) ? performance.now() : Date.now();
+
+    if (!ptr.has) {
+      ptr.x = e.clientX; ptr.y = e.clientY; ptr.t = now; ptr.has = true;
+      return;
+    }
+
+    var dt = now - ptr.t;
+    if (dt < 4) return;   /* coalesce the bursts browsers deliver per frame */
+
+    var dx = e.clientX - ptr.x;
+    var dy = e.clientY - ptr.y;
+    var speed = Math.sqrt(dx * dx + dy * dy) / dt * 1000;
+
+    ptr.vx = dx / dt * 1000;
+    ptr.vy = dy / dt * 1000;
+    ptr.x = e.clientX; ptr.y = e.clientY; ptr.t = now;
+
+    if (!dx) return;
+    var dir = dx > 0 ? 1 : -1;
+
+    if (dir === ptr.dir) {
+      ptr.run += Math.abs(dx);
+      ptr.peak = Math.max(ptr.peak, speed);
+      return;
+    }
+
+    /* a turn only counts as part of a shake if the cursor was actually
+       travelling and had covered some ground since the last one. without the
+       distance test a hand resting unsteadily on the trackpad reads as a
+       shake; without the speed test, slow browsing does.
+       the speed that matters is the fastest point of the run that just ended,
+       NOT the speed at the turn -- a turn is where a shake is momentarily
+       slowest, so testing there rejects every gentle shake outright */
+    if (ptr.dir && ptr.run > MIN_TRAVEL && Math.max(ptr.peak, speed) > MIN_SPEED) {
+      /* measured on first use, not at arming: the photo of the day is still
+         loading then, so it would measure 0x0 and be dropped from the spill */
+      if (!state.pieces.length) state.pieces = collect();
+      state.agitation = Math.min(AGITATION_MAX, state.agitation + BUMP);
+
+      if (state.mode !== 'spilled' && state.agitation >= 1) {
+        spill({ x: ptr.vx * 0.0016, y: ptr.vy * 0.0016 });
+      } else {
+        run();
+      }
+    }
+
+    ptr.dir = dir;
+    ptr.run = Math.abs(dx);
+    ptr.peak = speed;
+  }
+
+  function listenShake() {
+    state.source = 'shake';
+    window.addEventListener('mousemove', onMove, { passive: true });
+  }
+
   function arm() {
+    /* a phone that can report its own tilt uses it; everything else with a
+       real pointer gets the shake instead */
+    if (!isPhone()) {
+      if (window.matchMedia('(pointer: fine)').matches) listenShake();
+      return;
+    }
+
     var DOE = window.DeviceOrientationEvent;
     if (!DOE) return;
-    if (!isPhone()) return;
 
     if (typeof DOE.requestPermission !== 'function') {
       /* android delivers orientation events unasked */
@@ -396,14 +566,22 @@
     document.addEventListener('click', ask);
   }
 
-  /* Apple Silicon Macs cannot tilt at all, so leave a way in from the
-     console and a ?spill= URL for working on the effect */
+  /* console hooks and a ?spill= URL for working on the effect by hand */
   window.tiltSpill = {
     spill: spill,
     restore: restore,
     state: state,
+    /* fake a shake from the console, for when there is no hand on the mouse */
+    shake: function (n) {
+      state.source = 'shake';
+      if (!state.pieces.length) state.pieces = collect();
+      state.agitation = Math.min(AGITATION_MAX, (n || 4) * BUMP);
+      if (state.mode !== 'spilled' && state.agitation >= 1) spill({ x: 1.2, y: -0.4 });
+      else run();
+    },
     /* drive the whole thing by hand: tiltSpill.set(40) leans and then lets go */
     set: function (roll, pitch) {
+      state.source = 'tilt';
       if (!state.pieces.length) state.pieces = collect();
       state.tilt.roll = roll;
       state.tilt.pitch = pitch || 0;
