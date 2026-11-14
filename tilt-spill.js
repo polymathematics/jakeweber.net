@@ -6,7 +6,8 @@
    there the trigger is shaking the cursor — the same gesture macOS uses to
    find a lost pointer. Shaking has no steady direction to lean toward, so the
    continuous build-up is a tremble instead: the harder you shake, the more the
-   type shivers, until it comes apart.
+   type shivers, until it comes apart. Shaking is also the way back: the pile
+   stays where it fell until a second shake reassembles it.
 
    Two regimes share one loop. Under the threshold every piece is pulled by its
    own spring toward an offset derived from the tilt; past it, matter.js takes
@@ -62,14 +63,17 @@
 
   /* a shake is read as direction reversals of the cursor. each qualifying one
      bumps "agitation", which decays every frame -- so sustained shaking
-     accumulates while a single flick fades. tuned so a vigorous shake fires in
-     about 0.6s and a deliberate one in 1.5s, while one flick peaks at 0.27 and
-     two casual reversals at 0.44, both well under the 1.0 trigger */
-  var BUMP = 0.27;
-  var DECAY = 0.985;
+     accumulates while a single flick fades.
+     deliberately not very sensitive: it takes seven or eight sustained
+     reversals to fire, where five used to. the decay has to stay slow enough
+     that agitation plateaus well above 1 -- a faster one with this small a
+     bump plateaus at 0.99 and the effect then never fires at all, however
+     long you shake */
+  var BUMP = 0.20;
+  var DECAY = 0.990;
   var AGITATION_MAX = 2;
-  var MIN_SPEED = 550;   /* px/sec at the turn */
-  var MIN_TRAVEL = 25;   /* px since the last turn, so a jittery hand is not a shake */
+  var MIN_SPEED = 750;   /* px/sec at the fastest point of the run */
+  var MIN_TRAVEL = 45;   /* px since the last turn, so a jittery hand is not a shake */
 
   /* the tremble rides on top of the springs rather than through them: at ~9Hz
      it is far above their 1.5Hz natural frequency, so routing it through the
@@ -84,9 +88,12 @@
      rest of the time */
   var TREMBLE_GATE = 0.5;
 
-  /* once shaken apart, the pile sits for a beat and then reassembles itself --
-     there is no "un-shake" the way un-tilting a phone puts things back */
-  var DWELL_MS = 2200;
+  /* the pile stays scrambled until it is shaken again. the lockout covers the
+     tail of the shake that broke it: a hand does not stop the instant the type
+     lets go, and those last few reversals would otherwise count toward putting
+     it straight back */
+  var LOCKOUT_MS = 700;
+  var SETTLED_FRAMES = 45;
 
   var DT = 1 / 60;
   var SETTLE_FRAMES = 30;
@@ -252,13 +259,27 @@
 
     Matter.Engine.update(engine, 1000 / 60);
 
+    var moving = 0;
+
     for (var i = 0; i < state.pieces.length; i++) {
       var p = state.pieces[i];
       if (!p.body) continue;
       p.x = p.body.position.x - p.originX;
       p.y = p.body.position.y - p.originY;
       p.r = p.body.angle;
+      moving = Math.max(moving,
+        Math.abs(p.body.velocity.x), Math.abs(p.body.velocity.y));
       write(p);
+    }
+
+    /* the pile now waits to be shaken again rather than reassembling on a
+       timer, so without this the loop would solve a settled pile forever.
+       agitation has to be spent too, or sleeping would freeze a half-built
+       shake in place and a few reversals much later would finish it */
+    if (moving < 0.08 && state.agitation === 0) {
+      if (++state.still > SETTLED_FRAMES) return false;
+    } else {
+      state.still = 0;
     }
 
     return true;
@@ -269,15 +290,6 @@
 
     /* no "un-shake" exists the way un-tilting a phone puts things back, so the
        pile waits out a beat of calm and then reassembles on its own */
-    /* restore() flips the mode to calm and the springs below pick the pieces
-       up in the same frame. it must not return here: restore()'s own run() is
-       a no-op while this loop is already running, so returning would schedule
-       no next frame and leave everything frozen mid-fall */
-    if (state.mode === 'spilled' && state.source === 'shake' &&
-        now - state.spillAt > DWELL_MS && state.agitation < 0.2) {
-      restore();
-    }
-
     var alive = state.mode === 'spilled' ? physicsStep() : springStep(now);
 
     if (!alive) {
@@ -394,6 +406,8 @@
     state.engine = engine;
     state.mode = 'spilled';
     state.spillAt = (window.performance && performance.now) ? performance.now() : Date.now();
+    state.agitation = 0;
+    state.still = 0;
     document.body.classList.add('is-spilled');
     run();
   }
@@ -542,12 +556,20 @@
       /* measured on first use, not at arming: the photo of the day is still
          loading then, so it would measure 0x0 and be dropped from the spill */
       if (!state.pieces.length) state.pieces = collect();
-      state.agitation = Math.min(AGITATION_MAX, state.agitation + BUMP);
 
-      if (state.mode !== 'spilled' && state.agitation >= 1) {
-        spill({ x: ptr.vx * 0.0016, y: ptr.vy * 0.0016 });
-      } else {
-        run();
+      /* ignore the tail of the shake that just broke the page, or it would go
+         straight back together */
+      var locked = state.mode === 'spilled' && now - state.spillAt < LOCKOUT_MS;
+
+      if (!locked) {
+        state.agitation = Math.min(AGITATION_MAX, state.agitation + BUMP);
+
+        if (state.agitation >= 1) {
+          if (state.mode === 'spilled') restore();
+          else spill({ x: ptr.vx * 0.0016, y: ptr.vy * 0.0016 });
+        } else {
+          run();
+        }
       }
     }
 
@@ -604,9 +626,11 @@
     shake: function (n) {
       state.source = 'shake';
       if (!state.pieces.length) state.pieces = collect();
-      state.agitation = Math.min(AGITATION_MAX, (n || 4) * BUMP);
-      if (state.mode !== 'spilled' && state.agitation >= 1) spill({ x: 1.2, y: -0.4 });
-      else run();
+      state.agitation = Math.min(AGITATION_MAX, (n || 8) * BUMP);
+      if (state.agitation >= 1) {
+        if (state.mode === 'spilled') { state.spillAt = 0; restore(); }
+        else spill({ x: 1.2, y: -0.4 });
+      } else run();
     },
     /* drive the whole thing by hand: tiltSpill.set(40) leans and then lets go */
     set: function (roll, pitch) {
