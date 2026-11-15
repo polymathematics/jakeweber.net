@@ -1,30 +1,24 @@
-/* tilt-spill — the page's contents come loose and pile up, driven by whatever
-   the device can actually sense.
+/* shake-spill — shake the pointer, or scrub a finger back and forth across the
+   screen, and the page's contents come loose and pile up at the bottom. Shake
+   again and they climb back into place.
 
-   On a phone that is tilt: the pieces drift toward the low side as it leans
-   and let go past a threshold. A laptop has no readable accelerometer, so
-   there the trigger is shaking the cursor — the same gesture macOS uses to
-   find a lost pointer. Shaking has no steady direction to lean toward, so the
-   continuous build-up is a tremble instead: the harder you shake, the more the
-   type shivers, until it comes apart. Shaking is also the way back: the pile
-   stays where it fell until a second shake reassembles it.
+   One gesture on every device. The accelerometer is not involved: Apple
+   Silicon Macs keep theirs behind the undocumented SPU with no public
+   framework access, so no browser can read it there, and on a phone the tilt
+   API costs an unexplained iOS permission dialog before it will report
+   anything. A rapid back-and-forth works everywhere, needs no permission and
+   no button, and is already what people do on macOS to find a lost cursor —
+   so it is discoverable by accident.
 
-   Two regimes share one loop. Under the threshold every piece is pulled by its
-   own spring toward an offset derived from the tilt; past it, matter.js takes
-   over as the solver. The handoff seeds each body with the position AND the
-   velocity its spring already had, so the break is a continuation rather than
-   a jump, and coming back runs the springs in reverse.
+   The build-up is a tremble: the harder you shake, the more the type shivers,
+   until it lets go. Below a gate nothing moves at all, so ordinary browsing
+   leaves the page completely still.
 
    matter.js is the solver only, never the renderer. Each piece of real content
    gets a rigid body and every frame the body's position and angle are copied
    onto the actual DOM element as a transform, so what tumbles is the live text
-   and the real photo rather than a canvas drawing of them.
-
-   Phones only. Tablets and convertibles carry the same gyroscope and pass
-   every feature test a phone would, so the gate is the screen's short side
-   rather than a capability check. Apple Silicon Macs keep their accelerometer
-   behind the undocumented SPU with no public framework access, so no browser
-   can read it there regardless — see spill()/restore() for manual testing. */
+   and the real photo rather than a canvas drawing of them. Coming back, the
+   same pieces are carried home by their own springs. */
 (function () {
   'use strict';
 
@@ -43,35 +37,20 @@
     '.bottom-box'
   ].join(',');
 
-  /* asymmetric on purpose: it takes a deliberate tip to break the page, and
-     you have to bring it most of the way back before it reassembles. equal
-     thresholds would strobe on and off while you held it at the edge */
-  var TRIGGER_DEG = 32;
-  var RELEASE_DEG = 18;
-
-  /* how far a piece drifts, and how far it cants over, at the moment before
-     everything lets go. small on purpose — this is the page breathing with
-     the phone, not a preview of the spill */
-  var LEAN_PX = 15;
-  var LEAN_RAD = 0.022;
-  var LEAN_REF = TRIGGER_DEG;
-
-  /* the accelerometer is noisy enough that mapping it straight onto position
-     visibly jitters while the phone is held still. a low-pass costs one
-     multiply and removes essentially all of it */
-  var SMOOTH = 0.12;
-
-  /* a shake is read as direction reversals of the cursor. each qualifying one
+  /* a shake is read as reversals of horizontal direction. each qualifying one
      bumps "agitation", which decays every frame -- so sustained shaking
      accumulates while a single flick fades.
-     deliberately not very sensitive: it takes seven or eight sustained
-     reversals to fire, where five used to. the decay has to stay slow enough
-     that agitation plateaus well above 1 -- a faster one with this small a
-     bump plateaus at 0.99 and the effect then never fires at all, however
-     long you shake */
+     deliberately not very sensitive: seven or eight sustained reversals to
+     fire. the decay has to stay slow enough that agitation plateaus well
+     above 1 -- a faster one with this small a bump plateaus at 0.99 and the
+     effect then never fires at all, however long you shake */
   var BUMP = 0.20;
   var DECAY = 0.990;
   var AGITATION_MAX = 2;
+
+  /* horizontal speed only, never the 2D magnitude: a fast vertical scroll on a
+     phone carries enough total speed to qualify, and the thumb always drifts
+     sideways a little while it does */
   var MIN_SPEED = 750;   /* px/sec at the fastest point of the run */
   var MIN_TRAVEL = 45;   /* px since the last turn, so a jittery hand is not a shake */
 
@@ -81,11 +60,9 @@
   var TREMBLE_PX = 4;
   var TREMBLE_RAD = 0.012;
 
-  /* below this much agitation nothing moves at all. one fast flick of the
-     cursor scores 0.27 and two casual reversals 0.44 -- both ordinary
-     browsing, and both used to show a visible shiver. the tremble now only
-     exists once a shake is genuinely under way, so the page is untouched the
-     rest of the time */
+  /* below this much agitation nothing moves at all. one fast flick scores 0.20
+     and a couple of casual reversals little more -- both ordinary input, and
+     both would otherwise show a visible shiver */
   var TREMBLE_GATE = 0.5;
 
   /* the pile stays scrambled until it is shaken again. the lockout covers the
@@ -94,6 +71,14 @@
      it straight back */
   var LOCKOUT_MS = 700;
   var SETTLED_FRAMES = 45;
+
+  /* agitation holds instead of decaying for a moment after each reversal. a
+     finger swiping repeatedly has to lift and land between strokes, and that
+     pause used to be counted against you -- twelve separate swipes crept to
+     0.99 and never fired, while the same motion without lifting fired in
+     under a second. 120ms covers the reposition without loosening a continuous
+     shake, which still needs its six reversals */
+  var HOLD_MS = 120;
 
   var DT = 1 / 60;
   var SETTLE_FRAMES = 30;
@@ -106,13 +91,10 @@
     pieces: [],
     engine: null,
     frame: null,
-    tilt: { roll: 0, pitch: 0 },   /* smoothed, degrees from the held baseline */
-    baseBeta: null,
-    baseGamma: null,
     still: 0,
-    source: 'tilt',                /* tilt | shake */
     agitation: 0,
-    spillAt: 0
+    spillAt: 0,
+    lastBump: -1e9
   };
 
   /* --- the pieces ------------------------------------------------------ */
@@ -136,7 +118,9 @@
       pieces.push({
         el: el,
         body: null,
-        /* spring state, in px and radians relative to where layout put it */
+        /* spring state, in px and radians relative to where layout put it.
+           the springs rest at zero and exist to carry pieces home after a
+           spill -- the shake itself is the tremble below */
         x: 0, y: 0, r: 0,
         vx: 0, vy: 0, vr: 0,
         /* a long line of text has more of itself hanging off the pivot than a
@@ -155,6 +139,12 @@
     return pieces;
   }
 
+  function fade(now) {
+    if (state.agitation <= 0) return;
+    if (now - state.lastBump < HOLD_MS) return;
+    state.agitation = state.agitation > 0.002 ? state.agitation * DECAY : 0;
+  }
+
   function write(p, jx, jy, jr) {
     /* every path that writes a transform marks the element, so springStep
        knows there is one to strip once the piece comes to rest */
@@ -168,13 +158,6 @@
   /* --- the loop -------------------------------------------------------- */
 
   function springStep(now) {
-    var shaking = state.source === 'shake';
-    var t = state.tilt;
-
-    /* a shake has no steady direction, so there is nothing to lean toward --
-       the springs rest at zero and the whole build-up is the tremble */
-    var lean = shaking ? 0 : Math.max(-1, Math.min(1, t.roll / LEAN_REF));
-    var sag = shaking ? 0 : Math.max(0, Math.min(1, Math.abs(t.pitch) / 90));
     var ag = state.agitation;
     /* remapped so the shiver starts from nothing at the gate rather than
        appearing already part-grown */
@@ -186,13 +169,11 @@
     for (var i = 0; i < state.pieces.length; i++) {
       var p = state.pieces[i];
 
-      var tx = lean * LEAN_PX * p.drift;
-      var ty = sag * LEAN_PX * 0.4 * p.drift;
-      var tr = lean * LEAN_RAD * p.drift;
-
-      p.vx += ((tx - p.x) * p.stiff - p.vx * p.damp) * DT;
-      p.vy += ((ty - p.y) * p.stiff - p.vy * p.damp) * DT;
-      p.vr += ((tr - p.r) * p.stiff - p.vr * p.damp) * DT;
+      /* homing toward zero: nothing pulls the layout off its mark any more,
+         so this only has work to do on the way back from a spill */
+      p.vx += (-p.x * p.stiff - p.vx * p.damp) * DT;
+      p.vy += (-p.y * p.stiff - p.vy * p.damp) * DT;
+      p.vr += (-p.r * p.stiff - p.vr * p.damp) * DT;
 
       p.x += p.vx * DT;
       p.y += p.vy * DT;
@@ -206,7 +187,7 @@
         jr = Math.sin(now * p.tf * 0.8 + p.tp) * TREMBLE_RAD * a;
       }
 
-      moving = Math.max(moving, Math.abs(p.vx), Math.abs(p.vy), Math.abs(tx - p.x));
+      moving = Math.max(moving, Math.abs(p.vx), Math.abs(p.vy), Math.abs(p.x));
 
       /* strip the transform rather than writing an identity one. translate3d
          promotes the element to its own compositing layer, which rasterises
@@ -223,10 +204,10 @@
       }
     }
 
-    if (ag > 0) state.agitation = ag > 0.002 ? ag * DECAY : 0;
+    fade(now);
 
     /* nothing is moving and nothing wants to: stop burning frames until the
-       next shake or orientation event disturbs it */
+       next shake disturbs it */
     if (moving < 0.05 && state.agitation === 0) {
       if (++state.still > SETTLE_FRAMES) return false;
     } else {
@@ -236,26 +217,16 @@
     return true;
   }
 
-  function physicsStep() {
+  function physicsStep(now) {
     var engine = state.engine;
     if (!engine) return true;
 
-    var t = state.tilt;
-    if (state.source === 'shake') {
-      /* nothing to lean toward: it simply falls, and the sideways scatter came
-         from the impulse each piece was given at the moment it let go */
-      engine.gravity.x = 0;
-      engine.gravity.y = 1;
-      if (state.agitation > 0) {
-        state.agitation = state.agitation > 0.002 ? state.agitation * DECAY : 0;
-      }
-    } else {
-      var lean = Math.max(-1, Math.min(1, t.roll / 50));
-      engine.gravity.x = lean * 1.9;
-      /* never let gravity point up the screen: things slide to the low side,
-         they do not float */
-      engine.gravity.y = Math.max(0.35, 1 - Math.abs(t.pitch) / 160);
-    }
+    /* nothing to lean toward: it simply falls, and the sideways scatter came
+       from the impulse each piece was given at the moment it let go */
+    engine.gravity.x = 0;
+    engine.gravity.y = 1;
+
+    fade(now);
 
     Matter.Engine.update(engine, 1000 / 60);
 
@@ -272,10 +243,10 @@
       write(p);
     }
 
-    /* the pile now waits to be shaken again rather than reassembling on a
-       timer, so without this the loop would solve a settled pile forever.
-       agitation has to be spent too, or sleeping would freeze a half-built
-       shake in place and a few reversals much later would finish it */
+    /* the pile waits to be shaken again rather than reassembling on a timer,
+       so without this the loop would solve a settled pile forever. agitation
+       has to be spent too, or sleeping would freeze a half-built shake in
+       place and a few reversals much later would finish it */
     if (moving < 0.08 && state.agitation === 0) {
       if (++state.still > SETTLED_FRAMES) return false;
     } else {
@@ -287,10 +258,7 @@
 
   function tick() {
     var now = (window.performance && performance.now) ? performance.now() : Date.now();
-
-    /* no "un-shake" exists the way un-tilting a phone puts things back, so the
-       pile waits out a beat of calm and then reassembles on its own */
-    var alive = state.mode === 'spilled' ? physicsStep() : springStep(now);
+    var alive = state.mode === 'spilled' ? physicsStep(now) : springStep(now);
 
     if (!alive) {
       state.running = false;
@@ -311,7 +279,7 @@
   /* --- letting go ------------------------------------------------------ */
 
   /* the element is pinned at the rect it currently occupies, which already
-     includes whatever the spring had drifted it to. the layout falls away
+     includes whatever the tremble had shifted it to. the layout falls away
      behind it while the bordered boxes stay as empty vessels */
   function pin(p) {
     var rect = p.el.getBoundingClientRect();
@@ -319,8 +287,8 @@
     var h = p.el.offsetHeight;
 
     /* rotation about the centre leaves the centre alone, so this is the
-       untransformed origin even mid-lean. offsetWidth over the bbox width for
-       the same reason — a rotated bbox is wider than the element */
+       untransformed origin even mid-tremble. offsetWidth over the bbox width
+       for the same reason -- a rotated bbox is wider than the element */
     p.originX = rect.left + rect.width / 2 - p.x;
     p.originY = rect.top + rect.height / 2 - p.y;
     p.w = w;
@@ -386,12 +354,11 @@
         density: 0.0009
       });
 
-      /* carry the spring's momentum across. matter measures velocity per
-         step, the springs in px per second — without the divide every piece
-         would be flung sixty times too hard at the moment of release */
-      /* the springs' own momentum, plus whatever the cursor was doing at the
-         instant it broke -- that kick is what makes a shake scatter the type
-         sideways instead of just dropping it */
+      /* the springs' own momentum, plus whatever the pointer or finger was
+         doing at the instant it broke -- that kick is what makes a shake
+         scatter the type sideways instead of just dropping it.
+         matter measures velocity per step, the springs in px per second --
+         without the divide every piece would be flung sixty times too hard */
       var kx = impulse ? impulse.x * p.drift : 0;
       var ky = impulse ? impulse.y * p.drift : 0;
       Matter.Body.setVelocity(body, { x: p.vx * DT + kx, y: p.vy * DT + ky });
@@ -455,86 +422,30 @@
     run();
   }
 
-  /* --- tilt input ------------------------------------------------------ */
+  /* --- the gesture ----------------------------------------------------- */
 
-  function onOrientation(e) {
-    if (e.beta === null || e.gamma === null) return;
-
-    /* a phone held for reading already sits around 45 degrees of beta, so an
-       absolute threshold would fire the instant the page loaded. everything
-       is measured against however the device was being held when it armed */
-    if (state.baseBeta === null) {
-      state.baseBeta = e.beta;
-      state.baseGamma = e.gamma;
-      state.pieces = collect();
-      return;
-    }
-
-    var roll = e.gamma - state.baseGamma;
-    var pitch = e.beta - state.baseBeta;
-
-    /* device axes are fixed to the chassis, screen axes are not. without
-       folding in the screen angle, a landscape phone spills sideways when you
-       tip it forwards */
-    var a = ((screen.orientation && screen.orientation.angle) || window.orientation || 0) * Math.PI / 180;
-    var cos = Math.cos(a);
-    var sin = Math.sin(a);
-
-    var targetRoll = roll * cos + pitch * sin;
-    var targetPitch = pitch * cos - roll * sin;
-
-    state.tilt.roll += (targetRoll - state.tilt.roll) * SMOOTH;
-    state.tilt.pitch += (targetPitch - state.tilt.pitch) * SMOOTH;
-
-    var magnitude = Math.abs(state.tilt.roll);
-
-    if (state.mode !== 'spilled' && magnitude > TRIGGER_DEG) spill();
-    else if (state.mode === 'spilled' && magnitude < RELEASE_DEG) restore();
-    else run();
-  }
-
-  function listen() {
-    window.addEventListener('deviceorientation', onOrientation, false);
-  }
-
-  /* phones only, and no feature test can tell a phone from a tablet -- both
-     carry the same gyroscope. the screen's short side is the honest signal:
-     it does not change when the device rotates, where a width media query
-     would, since a phone in landscape is around 844px wide and would read as
-     a tablet. phones sit at 360-430, the smallest tablets at 600+ */
-  function isPhone() {
-    var s = window.screen || {};
-    var shortSide = Math.min(s.width || 9999, s.height || 9999);
-    return shortSide <= 500 && window.matchMedia('(pointer: coarse)').matches;
-  }
-
-  /* --- shake input (laptops and desktops) ------------------------------ */
-
-  /* a laptop has no accelerometer a browser can read -- Apple Silicon Macs
-     keep theirs behind the undocumented SPU -- so the gesture stands in for
-     the sensor. Shaking the cursor is already a thing people do on macOS to
-     find a lost pointer, which makes it discoverable by accident and needs no
-     button, no permission and no instructions */
   var ptr = { x: 0, y: 0, t: 0, dir: 0, run: 0, peak: 0, vx: 0, vy: 0, has: false };
 
-  function onMove(e) {
+  /* one detector for pointer and finger alike: both arrive here as a position
+     and a clock */
+  function feed(x, y) {
     var now = (window.performance && performance.now) ? performance.now() : Date.now();
 
     if (!ptr.has) {
-      ptr.x = e.clientX; ptr.y = e.clientY; ptr.t = now; ptr.has = true;
+      ptr.x = x; ptr.y = y; ptr.t = now; ptr.has = true;
       return;
     }
 
     var dt = now - ptr.t;
     if (dt < 4) return;   /* coalesce the bursts browsers deliver per frame */
 
-    var dx = e.clientX - ptr.x;
-    var dy = e.clientY - ptr.y;
-    var speed = Math.sqrt(dx * dx + dy * dy) / dt * 1000;
+    var dx = x - ptr.x;
+    var dy = y - ptr.y;
+    var speed = Math.abs(dx) / dt * 1000;
 
     ptr.vx = dx / dt * 1000;
     ptr.vy = dy / dt * 1000;
-    ptr.x = e.clientX; ptr.y = e.clientY; ptr.t = now;
+    ptr.x = x; ptr.y = y; ptr.t = now;
 
     if (!dx) return;
     var dir = dx > 0 ? 1 : -1;
@@ -545,10 +456,10 @@
       return;
     }
 
-    /* a turn only counts as part of a shake if the cursor was actually
+    /* a turn only counts as part of a shake if the thing was actually
        travelling and had covered some ground since the last one. without the
-       distance test a hand resting unsteadily on the trackpad reads as a
-       shake; without the speed test, slow browsing does.
+       distance test a hand resting unsteadily reads as a shake; without the
+       speed test, slow browsing does.
        the speed that matters is the fastest point of the run that just ended,
        NOT the speed at the turn -- a turn is where a shake is momentarily
        slowest, so testing there rejects every gentle shake outright */
@@ -563,6 +474,7 @@
 
       if (!locked) {
         state.agitation = Math.min(AGITATION_MAX, state.agitation + BUMP);
+        state.lastBump = now;
 
         if (state.agitation >= 1) {
           if (state.mode === 'spilled') restore();
@@ -578,75 +490,50 @@
     ptr.peak = speed;
   }
 
-  function listenShake() {
-    state.source = 'shake';
-    window.addEventListener('mousemove', onMove, { passive: true });
+  function onMouseMove(e) {
+    feed(e.clientX, e.clientY);
+  }
+
+  function onTouchMove(e) {
+    var t = e.touches[0];
+    if (t) feed(t.clientX, t.clientY);
+  }
+
+  /* a finger leaving the glass and landing again must not read as one huge
+     sideways jump, so position tracking restarts -- but the direction and the
+     run it covered are kept. that is what lets a series of separate swipes
+     count as a shake, rather than only one unbroken back-and-forth */
+  function onTouchBreak() {
+    ptr.has = false;
   }
 
   function arm() {
-    /* a phone that can report its own tilt uses it; everything else with a
-       real pointer gets the shake instead */
-    if (!isPhone()) {
-      if (window.matchMedia('(pointer: fine)').matches) listenShake();
-      return;
-    }
-
-    var DOE = window.DeviceOrientationEvent;
-    if (!DOE) return;
-
-    if (typeof DOE.requestPermission !== 'function') {
-      /* android delivers orientation events unasked */
-      listen();
-      return;
-    }
-
-    /* iOS hands over nothing until requestPermission resolves granted, and
-       that call is only honoured inside a user gesture. with no button to
-       press, the first touch anywhere on the page has to be the gesture --
-       so the system dialog arrives unannounced, and a decline cannot be
-       retried without a reload. that is the cost of having no affordance */
-    var ask = function () {
-      document.removeEventListener('touchend', ask);
-      document.removeEventListener('click', ask);
-      DOE.requestPermission().then(function (res) {
-        if (res === 'granted') listen();
-      }).catch(function () {});
-    };
-
-    document.addEventListener('touchend', ask, { passive: true });
-    document.addEventListener('click', ask);
+    window.addEventListener('mousemove', onMouseMove, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('touchstart', onTouchBreak, { passive: true });
+    window.addEventListener('touchend', onTouchBreak, { passive: true });
+    window.addEventListener('touchcancel', onTouchBreak, { passive: true });
   }
 
-  /* console hooks and a ?spill= URL for working on the effect by hand */
+  /* console hooks, for working on the effect by hand */
   window.tiltSpill = {
     spill: spill,
     restore: restore,
     state: state,
-    /* fake a shake from the console, for when there is no hand on the mouse */
+    /* fake a shake: tiltSpill.shake() breaks the page, again puts it back */
     shake: function (n) {
-      state.source = 'shake';
       if (!state.pieces.length) state.pieces = collect();
       state.agitation = Math.min(AGITATION_MAX, (n || 8) * BUMP);
       if (state.agitation >= 1) {
         if (state.mode === 'spilled') { state.spillAt = 0; restore(); }
         else spill({ x: 1.2, y: -0.4 });
       } else run();
-    },
-    /* drive the whole thing by hand: tiltSpill.set(40) leans and then lets go */
-    set: function (roll, pitch) {
-      state.source = 'tilt';
-      if (!state.pieces.length) state.pieces = collect();
-      state.tilt.roll = roll;
-      state.tilt.pitch = pitch || 0;
-      if (state.mode !== 'spilled' && Math.abs(roll) > TRIGGER_DEG) spill();
-      else if (state.mode === 'spilled' && Math.abs(roll) < RELEASE_DEG) restore();
-      else run();
     }
   };
 
   if (/[?&]spill\b/.test(window.location.search)) {
     window.addEventListener('load', function () {
-      window.setTimeout(function () { window.tiltSpill.set(45); }, 400);
+      window.setTimeout(function () { window.tiltSpill.shake(); }, 400);
     });
   }
 
