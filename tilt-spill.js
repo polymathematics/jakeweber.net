@@ -429,6 +429,10 @@
   /* one detector for pointer and finger alike: both arrive here as a position
      and a clock */
   function feed(x, y) {
+    /* the photo lightbox covers the page; shaking over it should not spill
+       what is hidden behind */
+    if (document.querySelector('dialog[open]')) return;
+
     var now = (window.performance && performance.now) ? performance.now() : Date.now();
 
     if (!ptr.has) {

@@ -71,7 +71,9 @@
         </div>
 
         <figure class="photo-of-the-day">
-          <img alt="">
+          <button type="button" class="potd-open" aria-label="view the photo of the day full size">
+            <img alt="">
+          </button>
           <figcaption></figcaption>
         </figure>
         </div>
@@ -188,6 +190,16 @@
       <feComposite in="bled" in2="grain" operator="in" />
     </filter>
   </svg>
+
+  <!-- the photo of the day, full size. a top-layer <dialog> brings Esc to
+       close, a focus trap and ::backdrop for free -->
+  <dialog class="potd-lightbox" aria-label="photo of the day">
+    <button type="button" class="potd-close" aria-label="close">&times;</button>
+    <figure>
+      <img alt="">
+      <figcaption></figcaption>
+    </figure>
+  </dialog>
 
   <script src="vendor/matter.min.js"></script>
   <script src="manifest.js"></script>
