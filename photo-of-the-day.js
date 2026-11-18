@@ -62,7 +62,10 @@ return false;
 
 // a photo listed in a stale manifest may no longer be on disk
 potdImage.onerror = function(){ potdFigure.remove(); };
-potdImage.onload = function(){ cropToSubject(potdImage, photo.year + "/" + photo.file); };
+potdImage.onload = function(){
+cropToSubject(potdImage, photo.year + "/" + photo.file);
+introPan(potdImage);
+};
 potdImage.alt = "a photo from " + photo.year;
 potdImage.src = "images/gallery/" + photo.year + "/" + photo.file;
 potdCaption.textContent = "photo of the day from " + photo.year;
@@ -192,6 +195,71 @@ const profile = new Float32Array(h);
 for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) profile[y] += map[y * w + x];
 const span = Math.round(w / boxRatio);
 img.style.objectPosition = "50% " + (bestOffset(profile, span) * 100).toFixed(1) + "%";
+}
+}
+
+// ---- arrival pan -------------------------------------------------------------
+// On load the photo travels up to its top edge, down to its bottom edge, then
+// settles back on its crop - a glance at everything the box is leaving out. A
+// photo taller than the box scrolls through its real hidden strip. A wide one
+// already fills the box top to bottom, so it has nothing to scroll to; it
+// zooms in a touch to make room, and the zoom is gone again by the time it
+// settles.
+
+const PAN_MS = 2400;
+const PAN_DELAY_MS = 250;
+const PAN_MIN_ROOM = 12;   // px of hidden photo worth scrolling through rather than zooming
+const PAN_ZOOM = 1.1;      // how far a wide one zooms to make room
+
+// keyframe offsets in proportion to the distance of each leg, so the photo
+// moves at one steady speed rather than rushing the long middle stretch.
+// each leg eases into its turn on its own
+function evenLegs(frames, distances){
+const total = distances.reduce(function(a, b){ return a + b; }, 0) || 1;
+let run = 0;
+return frames.map(function(frame, i){
+if (i > 0) run += distances[i - 1];
+frame.offset = run / total;
+frame.easing = "ease-in-out";
+return frame;
+});
+}
+
+function introPan(img){
+if (!img.animate) return;
+if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+const boxW = img.clientWidth, boxH = img.clientHeight;
+if (!boxW || !boxH || !img.naturalWidth) return;
+const room = boxW * img.naturalHeight / img.naturalWidth - boxH;   // hidden px, top + bottom
+const timing = { duration: PAN_MS, delay: PAN_DELAY_MS };
+
+if (room >= PAN_MIN_ROOM){
+// object-position as a px offset: 0 shows the top, -room the bottom
+const final = img.style.objectPosition || "50% 50%";
+const [x, y = "50%"] = final.split(" ");
+// a hand-set focus may be a keyword ("top") rather than a %; pan from the middle
+const pct = /%$/.test(y) ? parseFloat(y) : 50;
+const rest = -(pct / 100) * room;
+const at = function(offset){ return x + " " + offset.toFixed(1) + "px"; };
+img.animate(evenLegs([
+{ objectPosition: at(rest) },
+{ objectPosition: at(0) },
+{ objectPosition: at(-room) },
+{ objectPosition: at(rest) }
+], [-rest, room, room + rest]), timing);
+} else {
+// the zoom leaves (PAN_ZOOM - 1) / 2 of spare height on each side; travel
+// all of it, to the zoomed photo's own edges. translate is applied inside
+// the scale, so divide back out
+const shift = ((PAN_ZOOM - 1) / 2 / PAN_ZOOM * 100).toFixed(3) + "%";
+const zoomed = "scale(" + PAN_ZOOM + ") translateY(";
+img.animate(evenLegs([
+{ transform: "none" },
+{ transform: zoomed + shift + ")" },
+{ transform: zoomed + "-" + shift + ")" },
+{ transform: "none" }
+], [1, 2, 1]), timing);
 }
 }
 

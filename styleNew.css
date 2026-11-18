@@ -175,19 +175,32 @@ body {
   width: 100%;
   aspect-ratio: 4 / 3;
   object-fit: cover;
-  border: 1px solid #111;
   background: #e8e8e8;
 }
 
 /* the photo is the button: strip the button chrome so the box looks exactly
    as it did before it became clickable */
 .potd-open {
+  position: relative;
   display: block;
   width: 100%;
   padding: 0;
   border: 0;
   background: none;
   cursor: zoom-in;
+  /* the arrival pan zooms wide photos a touch; keep that inside the box */
+  overflow: hidden;
+}
+
+/* the frame is drawn over the photo rather than on it, so the zoom in the
+   arrival pan cannot carry the border along with it. same pixels as the old
+   border on the img, so the box measures exactly what it did */
+.potd-open::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid #111;
+  pointer-events: none;
 }
 
 .potd-open:focus-visible {
