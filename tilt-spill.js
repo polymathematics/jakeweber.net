@@ -28,6 +28,7 @@
   var SELECTORS = [
     '.site-header h1',
     '.member-badge',
+    '.cleaning-tag',
     '.shimmer-squares',
     '.block h2',
     '.block p',

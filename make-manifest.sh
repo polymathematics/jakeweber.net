@@ -39,6 +39,10 @@ echo "\"$year\": [$files],"
 done
 echo "};"
 
+# The home page's "last updated" tag. The pre-commit hook runs this script, so
+# the day it runs is the day of the commit it is part of.
+echo "window.LAST_UPDATED = \"$(date +%F)\";"
+
 md_years books BOOKS
 md_years work WORK
 md_years journal JOURNAL

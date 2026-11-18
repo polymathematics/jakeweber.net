@@ -10,6 +10,7 @@ window.GALLERY = {
 "2025": ["Screenshot 2025-02-08 at 11.33.51 AM.png","Screenshot 2026-01-10 at 11.47.36 PM.png","Screenshot 2026-08-09 at 3.48.47 PM.png","Screenshot 2026-08-09 at 3.49.27 PM.png","Screenshot 2026-08-09 at 3.49.45 PM.png","f427e0c0-382c-4429-938c-7da35be9c294_489x723.jpg","figure8_christmas_2025.png","sanDiego_2025.png","thanksgiving_walk_2025.png"],
 "2026": ["2e7c8209-ed92-4bff-9717-d91beb333314_8064x6048.jpg","HXBRj-JXoAA1aB_.jpeg","HXBRj-MWUAAhGGa.jpeg","HXBRj-lWAAAiXoF.jpeg","IMG_6087.JPG","Screenshot 2026-08-09 at 3.49.09 PM.png","Screenshot 2026-08-09 at 5.05.23 PM.png","afb41e2e-12a7-479a-b410-1fdb8e796ee3_5712x4284.jpg","alley.jpeg","bikes.jpeg","coffee.jpeg","electric_road_trip_2026.png","france.jpeg","france_tourists.jpeg","hilma.jpeg","html_day_2026.jpeg","lunch.jpeg","mirrorSelfie29.jpeg","parisSelfie.jpeg","paris_airport_2026.png","paris_photo_2026.png","reading_switchyards.jpeg","readingboat.png","rio_2026.png","rio_market_2026.png","road.jpeg","selfie.jpeg","skycar.JPG","softwareExperiment_2026.jpeg","trail.jpeg","walk.JPG","working.jpeg"],
 };
+window.LAST_UPDATED = "2026-11-18";
 window.BOOKS = {
 "2018": ["before I kept a proper reading log... need to dig it up"],
 "2019": ["before I kept a proper reading log... need to dig it up"],

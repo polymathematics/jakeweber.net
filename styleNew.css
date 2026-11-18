@@ -614,6 +614,151 @@ a:hover {
   }
 }
 
+/* "last updated" tag — a vintage dry-cleaning ticket stuck on the home page's
+   top-right corner. turned on its side so it sits in a header row rather than
+   making it taller, and set askew. two layers: the outer one belongs to
+   tilt-spill.js, which writes its transform every frame, so the tilt lives on
+   the inner paper where the two cannot overwrite each other */
+
+.cleaning-tag {
+  /* a deep bottle green, a shade below tag 7 in the reference */
+  --tag-paper: #1f7135;
+  --tag-box: #141414;
+  --tag-ink: #161616;
+  position: relative;
+  z-index: 5;
+  flex-shrink: 0;
+  /* the ticket is taller than the header row; these let it hang over the
+     margin and the panel's top edge instead of pushing the page down */
+  margin: -4px 10px -23px 0;
+  /* nudged down without moving the header around it */
+  top: 4px;
+  /* a masked element cannot cast a box-shadow, so the shadow is a
+     drop-shadow here on the unmasked outer layer. it is a scanner's shadow,
+     not a floating one: the lamp sweeps from one side, so a thin card throws
+     a short, fairly crisp edge down and to the right, plus a faint spread
+     where the paper lifts off the glass */
+  filter:
+    drop-shadow(0.5px 1.5px 0.5px rgba(0, 0, 0, 0.36))
+    drop-shadow(2px 3.5px 4.5px rgba(0, 0, 0, 0.15));
+}
+
+.cleaning-tag-paper {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 7px 12px 8px 11px;
+  /* clockwise, so the left end sits higher than the right */
+  transform: rotate(5.5deg);
+  color: var(--tag-ink);
+  /* flat, evenly dyed card, the way the reference scans: the colour itself
+     carries it. texture stays at the scale of the scanner, never the paper,
+     which is what kept reading as leather */
+  background:
+    /* sensor noise: a faint fleck of colour per pixel, the way a scanner's
+       red, green and blue channels each pick up their own grain */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='130' height='130'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.4' numOctaves='1' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix values='1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0 .16'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    /* scanner grain: very fine grey noise, overlaid so it lifts and darkens
+       in equal measure instead of dirtying the colour */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.9' numOctaves='1' stitchTiles='stitch'/%3E%3CfeColorMatrix values='1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 .42'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    /* age: a couple of pinpoint foxing spots and one faint thumb-mark */
+    radial-gradient(circle at 81% 28%, rgba(110, 80, 20, 0.32) 0 0.8px, transparent 1.5px),
+    radial-gradient(circle at 17% 79%, rgba(110, 80, 20, 0.24) 0 0.7px, transparent 1.3px),
+    radial-gradient(ellipse 14px 8px at 66% 84%, rgba(120, 95, 30, 0.1), transparent),
+    /* edges gone faintly yellow-brown, as old card does from the outside in */
+    radial-gradient(ellipse at 50% 45%, transparent 62%, rgba(150, 118, 40, 0.2) 100%),
+    /* the scanner lamp, very gently: a touch brighter at the left end,
+       a touch dimmer at the right where the card lifts */
+    linear-gradient(100deg, rgba(255, 255, 255, 0.09), transparent 35%, transparent 70%, rgba(0, 0, 0, 0.07)),
+    var(--tag-paper);
+  background-blend-mode: overlay, overlay, normal, normal, normal, normal, normal, normal;
+  /* the thickness of the card: a catch of light along the top edge, and a
+     little shade under the bottom one where it curls off the glass */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.14);
+  /* the rouletted tear on both long edges: a fine zigzag cut by the mask */
+  -webkit-mask:
+    conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / 5px 51% repeat-x,
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 5px 51% repeat-x;
+  mask:
+    conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / 5px 51% repeat-x,
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 5px 51% repeat-x;
+}
+
+/* everything printed runs through the page's ink-bleed filter, and the black
+   ink is multiplied into the paper so the grain shows through it. the box is
+   left out of the multiply: its letters are the paper colour, and multiplied
+   they would come out darker than the paper around them */
+.ct-label,
+.ct-date {
+  filter: url(#ink-bleed);
+}
+
+.ct-label,
+.ct-day,
+.ct-year {
+  mix-blend-mode: multiply;
+}
+
+.ct-label {
+  padding-bottom: 3px;
+  border-bottom: 2px solid var(--tag-ink);
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 700;
+  font-size: 8px;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.ct-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+}
+
+/* the reversed-out box, its letters the colour of the paper */
+.ct-box {
+  padding: 3px 4px 2px;
+  background: var(--tag-box);
+  color: var(--tag-paper);
+  font-family: "Arial Black", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* the big ticket numerals: a monospaced face, slightly squashed, like the
+   numbering machine that stamped them */
+.ct-day,
+.ct-year {
+  font-family: "Courier New", Courier, monospace;
+  /* the face only comes in regular and bold. regular with a hairline stroke
+     lands between the two: a touch lighter than bold, not spindly */
+  font-weight: 400;
+  -webkit-text-stroke: 0.45px var(--tag-ink);
+  transform: scaleY(1.12);
+}
+
+.ct-day {
+  font-size: 22px;
+  letter-spacing: 0.04em;
+}
+
+.ct-year {
+  align-self: flex-end;
+  font-size: 13px;
+}
+
+@supports not (filter: url(#ink-bleed)) {
+  .ct-label,
+  .ct-date {
+    filter: none;
+  }
+}
+
 /* membership page */
 
 body.membership {

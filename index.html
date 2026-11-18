@@ -19,7 +19,14 @@
   <main class="page">
     <header class="site-header">
       <h1>jake <span>weber</span></h1>
-      <a class="member-badge" href="/membership">join the membership</a>
+      <!-- a vintage dry-cleaning tag stuck on the corner. cleaning-tag.js
+           fills in the date of the last commit, which make-manifest.sh records -->
+      <p class="cleaning-tag">
+        <span class="cleaning-tag-paper">
+          <span class="ct-label">last updated</span>
+          <time class="ct-date"><span class="ct-box"></span><span class="ct-day"></span><span class="ct-year"></span></time>
+        </span>
+      </p>
     </header>
 
     <section class="layout">
@@ -204,6 +211,7 @@
   <script src="vendor/matter.min.js"></script>
   <script src="manifest.js"></script>
   <script src="photo-of-the-day.js"></script>
+  <script src="cleaning-tag.js"></script>
   <script src="tilt-spill.js"></script>
 </body>
 
