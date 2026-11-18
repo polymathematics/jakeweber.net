@@ -631,8 +631,9 @@ a:hover {
   /* the ticket is taller than the header row; these let it hang over the
      margin and the panel's top edge instead of pushing the page down */
   margin: -4px 10px -23px 0;
-  /* nudged down without moving the header around it */
-  top: 4px;
+  /* placed by hand: nudged down and over without moving the header */
+  top: 15.5px;
+  left: 1px;
   /* a masked element cannot cast a box-shadow, so the shadow is a
      drop-shadow here on the unmasked outer layer. it is a scanner's shadow,
      not a floating one: the lamp sweeps from one side, so a thin card throws
@@ -649,7 +650,7 @@ a:hover {
   gap: 3px;
   padding: 7px 12px 8px 11px;
   /* clockwise, so the left end sits higher than the right */
-  transform: rotate(5.5deg);
+  transform: rotate(8.5deg);
   color: var(--tag-ink);
   /* flat, evenly dyed card, the way the reference scans: the colour itself
      carries it. texture stays at the scale of the scanner, never the paper,
