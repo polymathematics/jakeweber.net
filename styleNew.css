@@ -89,6 +89,30 @@ body {
   overflow-y: auto;
 }
 
+/* home page only (the consulting page shares .right-panel): the three lists
+   only just overflow a laptop-height window, so the spacing gives way a little
+   rather than the panel scrolling. each value tracks the viewport height and
+   sits at its old full size on a tall screen, so only short windows tighten */
+@media (min-width: 1161px) {
+  .right-panel:has(.block.foundational) {
+    padding-top: clamp(16px, 2.6vh, 26px);
+    padding-bottom: clamp(16px, 2.6vh, 26px);
+    gap: clamp(12px, 2.2vh, 22px);
+  }
+
+  .right-panel:has(.block.foundational) .block h2 {
+    margin-bottom: clamp(6px, 1vh, 10px);
+  }
+
+  .right-panel:has(.block.foundational) li {
+    margin-bottom: clamp(1px, 0.4vh, 4px);
+  }
+
+  .right-panel:has(.block.foundational) li:last-child {
+    margin-bottom: 0;
+  }
+}
+
 .bottom-box {
   height: 44px;
   position: relative;
