@@ -632,8 +632,8 @@ a:hover {
      margin and the panel's top edge instead of pushing the page down */
   margin: -4px 10px -23px 0;
   /* placed by hand: nudged down and over without moving the header */
-  top: 15.5px;
-  left: 1px;
+  top: 17px;
+  left: 17px;
   /* a masked element cannot cast a box-shadow, so the shadow is a
      drop-shadow here on the unmasked outer layer. it is a scanner's shadow,
      not a floating one: the lamp sweeps from one side, so a thin card throws
